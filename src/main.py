@@ -304,7 +304,7 @@ class Game:
         def expand(self, actions):
             for action in actions:
                 next_state = self.get_next_state(self.state, action)
-                self.children.append(Game.MCTSNode(next_state, parent=self, action=action))  # Fixed bug by changing MCTSNode to Game.MCTSNode
+                self.children.append(Game.MCTSNode(next_state, parent=self, action=action)) 
 
         def get_next_state(self, state, action):
             new_board = np.copy(state)
@@ -317,24 +317,6 @@ class Game:
         def update(self, reward):
             self.visits += 1
             self.value += (reward - self.value) / self.visits
-
-    def mcts(root, policy_net, value_net, num_simulations):
-        for _ in range(num_simulations):
-            node = root
-            while not node.is_leaf():
-                node = best_child(node, policy_net, value_net)
-            
-            actions = get_actions_for_state(node.state)
-            if actions:
-                node.expand(actions)
-            
-            reward = simulate_random_game(node.state)
-            
-            while node:
-                node.update(reward)
-                node = node.parent
-
-        return best_action(root)
 
     def best_child(node, policy_net, value_net):
         exploration_constant = 1.4  

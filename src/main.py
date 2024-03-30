@@ -36,21 +36,10 @@ class Menu:
         self.computer_vs_computer_img = pygame.image.load("assets/Buttons/Mirror.png").convert_alpha()
         self.exit_img = pygame.image.load("assets/Buttons/Exit.png").convert_alpha()
 
-        self.human_img_with_bg = pygame.Surface((self.human_img.get_width() + 20, self.human_img.get_height() + 20), pygame.SRCALPHA)
-        self.human_img_with_bg.fill((255, 255, 255))
-        self.human_img_with_bg.blit(self.human_img, (10, 10))
-
-        self.computer_img_with_bg = pygame.Surface((self.computer_img.get_width() + 20, self.computer_img.get_height() + 20), pygame.SRCALPHA)
-        self.computer_img_with_bg.fill((255, 255, 255))
-        self.computer_img_with_bg.blit(self.computer_img, (10, 10))
-
-        self.mirror_img_with_bg = pygame.Surface((self.computer_vs_computer_img.get_width() + 20, self.computer_vs_computer_img.get_height() + 20), pygame.SRCALPHA)
-        self.mirror_img_with_bg.fill((255, 255, 255))
-        self.mirror_img_with_bg.blit(self.computer_vs_computer_img, (10, 10))
-
-        self.exit_img_with_bg = pygame.Surface((self.exit_img.get_width() + 20, self.exit_img.get_height() + 20), pygame.SRCALPHA)
-        self.exit_img_with_bg.fill((255, 255, 255))
-        self.exit_img_with_bg.blit(self.exit_img, (10, 10))
+        self.human_img_with_bg = self.create_button_with_bg(self.human_img)
+        self.computer_img_with_bg = self.create_button_with_bg(self.computer_img)
+        self.mirror_img_with_bg = self.create_button_with_bg(self.computer_vs_computer_img)
+        self.exit_img_with_bg = self.create_button_with_bg(self.exit_img)
 
         self.options = [self.human_img_with_bg, self.computer_img_with_bg, self.mirror_img_with_bg, self.exit_img_with_bg]
         self.option_texts = ["human vs human", "human vs computer", "computer vs computer", "exit"]
@@ -58,6 +47,12 @@ class Menu:
         self.selected_option = 0
         self.blink = True
         self.blink_timer = 0
+
+    def create_button_with_bg(self, img):
+        img_with_bg = pygame.Surface((img.get_width() + 20, img.get_height() + 20), pygame.SRCALPHA)
+        img_with_bg.fill((255, 255, 255))
+        img_with_bg.blit(img, (10, 10))
+        return img_with_bg
 
     def run(self):
         while True:
@@ -78,46 +73,44 @@ class Menu:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
-                        self.selected_option = (self.selected_option - 1) % len(self.options)
-                    elif event.key == pygame.K_RIGHT:
-                        self.selected_option = (self.selected_option + 1) % len(self.options)
-                    elif event.key == pygame.K_RETURN:
-                        if self.selected_option == 0:
-                            game = Game()
-                            game.play()
-                        elif self.selected_option == 1:
-                            game = Game(play_with_computer=True)
-                            game.play()
-                        elif self.selected_option == 2:
-                            game = Game(computer_vs_computer=True)
-                            game.play()
-                        elif self.selected_option == 3:
-                            pygame.quit()
-                            sys.exit()
+                    self.handle_keydown(event)
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    mouse_x, mouse_y = pygame.mouse.get_pos()
-                    for i, option_rect in enumerate(self.option_rects):
-                        if option_rect.collidepoint(mouse_x, mouse_y):
-                            self.selected_option = i
-                            if self.selected_option == 0:
-                                game = Game()
-                                game.play()
-                            elif self.selected_option == 1:
-                                game = Game(play_with_computer=True)
-                                game.play()
-                            elif self.selected_option == 2:
-                                game = Game(computer_vs_computer=True)
-                                game.play()
-                            elif self.selected_option == 3:
-                                pygame.quit()
-                                sys.exit()
+                    self.handle_mousebuttondown()
 
             self.blink_timer += 1
             if self.blink_timer % 5 == 0:
                 self.blink = not self.blink
 
             self.clock.tick(30)
+
+    def handle_keydown(self, event):
+        if event.key == pygame.K_LEFT:
+            self.selected_option = (self.selected_option - 1) % len(self.options)
+        elif event.key == pygame.K_RIGHT:
+            self.selected_option = (self.selected_option + 1) % len(self.options)
+        elif event.key == pygame.K_RETURN:
+            self.execute_selected_option()
+
+    def handle_mousebuttondown(self):
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        for i, option_rect in enumerate(self.option_rects):
+            if option_rect.collidepoint(mouse_x, mouse_y):
+                self.selected_option = i
+                self.execute_selected_option()
+
+    def execute_selected_option(self):
+        if self.selected_option == 0:
+            game = Game()
+            game.play()
+        elif self.selected_option == 1:
+            game = Game(play_with_computer=True)
+            game.play()
+        elif self.selected_option == 2:
+            game = Game(computer_vs_computer=True)
+            game.play()
+        elif self.selected_option == 3:
+            pygame.quit()
+            sys.exit()
 
 
 class Game:
@@ -175,27 +168,30 @@ class Game:
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_position = pygame.mouse.get_pos()
-                if 900 <= mouse_position[0] <= 950 and 20 <= mouse_position[1] <= 70:
-                    Menu().run()
-                    return
-                row, col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
-                if self.selected_piece:
-                    possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
-                    if possible_moves and (row, col) in possible_moves:
-                        if self.board.board[row, col] is not None:
-                            self.kill_log.append((self.selected_piece, self.board.board[row, col]))
-                        self.board.move_piece(self.selected_position, (row, col))
-                        self.switch_turn()
-                        self.turn_start_time = pygame.time.get_ticks()
-                    self.selected_piece = None
-                    self.selected_position = None
-                else:
-                    piece = self.board.board[row, col]
-                    if piece:
-                        if piece.color == self.current_turn:
-                            self.selected_piece = piece
-                            self.selected_position = (row, col)
+                self.handle_mousebuttondown()
+
+    def handle_mousebuttondown(self):
+        mouse_position = pygame.mouse.get_pos()
+        if 900 <= mouse_position[0] <= 950 and 20 <= mouse_position[1] <= 70:
+            Menu().run()
+            return
+        row, col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
+        if self.selected_piece:
+            possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
+            if possible_moves and (row, col) in possible_moves:
+                if self.board.board[row, col] is not None:
+                    self.kill_log.append((self.selected_piece, self.board.board[row, col]))
+                self.board.move_piece(self.selected_position, (row, col))
+                self.switch_turn()
+                self.turn_start_time = pygame.time.get_ticks()
+            self.selected_piece = None
+            self.selected_position = None
+        else:
+            piece = self.board.board[row, col]
+            if piece:
+                if piece.color == self.current_turn:
+                    self.selected_piece = piece
+                    self.selected_position = (row, col)
 
     def switch_turn(self):
         if self.current_turn == 'white':
@@ -252,7 +248,7 @@ class Game:
                     return
 
     def computer_move(self):
-        state = board_to_numeric(self.board.board).flatten()
+        state = self.board_to_numeric(self.board.board).flatten()
 
         actions = []
         for row in range(8):
@@ -271,7 +267,7 @@ class Game:
         gamma = 0.99
 
         if actions:
-            action_index, value = choose_action(state, actions, policy_net, value_net)
+            action_index, value = self.choose_action(state, actions, policy_net, value_net)
 
             action = actions[action_index]
             if action:
@@ -284,7 +280,7 @@ class Game:
                 self.board.board[start_row, start_col] = None
 
                 reward = self.evaluate_board()
-                next_state = board_to_numeric(self.board.board).flatten()
+                next_state = self.board_to_numeric(self.board.board).flatten()
                 next_actions = []
 
                 for row in range(8):
@@ -296,7 +292,7 @@ class Game:
                                 for next_move in possible_moves:
                                     next_actions.append(((row, col), next_move))
 
-                update_policy_and_value_net(policy_net, value_net, optimizer, state, action_index, reward, next_state, next_actions, gamma)
+                self.update_policy_and_value_net(policy_net, value_net, optimizer, state, action_index, reward, next_state, next_actions, gamma)
 
                 self.board.move_piece((start_row, start_col), move)
                 self.switch_turn()
@@ -352,6 +348,67 @@ class Game:
                         score -= value
         return score
 
+    def board_to_numeric(self, board):
+        numeric_board = np.zeros((8, 8), dtype=np.float32)
+        for row in range(8):
+            for col in range(8):
+                piece = board[row, col]
+                if piece is None:
+                    numeric_board[row, col] = 0
+                elif piece.color == 'black':
+                    numeric_board[row, col] = -1
+                else:
+                    numeric_board[row, col] = 1
+        return numeric_board
+
+    def choose_action(self, state, actions, policy_net, value_net, epsilon=0.1):
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        
+        with torch.no_grad():
+            policy = policy_net(state_tensor).squeeze(0).numpy()
+            value = value_net(state_tensor).item()
+
+        action_probabilities = np.zeros(len(actions))
+
+        if len(policy) == len(actions):
+            action_probabilities = np.exp(policy) / np.sum(np.exp(policy)) 
+        else:
+            for idx, action in enumerate(actions):
+                action_probabilities[idx] = policy[idx]
+
+            if np.sum(action_probabilities) > 0:
+                action_probabilities /= np.sum(action_probabilities)
+            else:
+                action_probabilities = np.ones(len(actions)) / len(actions)  
+
+        if np.random.rand() < epsilon:
+            return np.random.choice(len(actions)), None  
+        else:
+            return np.random.choice(len(actions), p=action_probabilities), value 
+
+    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
+        action_tensor = torch.tensor([action], dtype=torch.int64)
+        reward_tensor = torch.tensor([reward], dtype=torch.float32)
+
+        with torch.no_grad():
+            next_policy = policy_net(next_state_tensor).squeeze(0)
+            next_value = value_net(next_state_tensor).item()
+            next_action_probabilities = next_policy / torch.sum(next_policy)
+            next_value = torch.sum(next_action_probabilities * next_value)
+
+        policy = policy_net(state_tensor).squeeze(0)
+        value = value_net(state_tensor).item()
+        action_probability = policy[action_tensor]
+        advantage = reward_tensor + gamma * next_value - value
+        policy_loss = -torch.log(action_probability) * advantage
+        value_loss = advantage.pow(2)
+
+        optimizer.zero_grad()
+        (policy_loss + value_loss).backward()
+        optimizer.step()
+
 class MCTSNode:
     def __init__(self, state, parent=None, action=None):
         self.state = state
@@ -381,27 +438,32 @@ class MCTSNode:
         self.visits += 1
         self.value += (reward - self.value) / self.visits
 
-def best_child(node, policy_net, value_net):
-    exploration_constant = 1.4  
-    best_score = -float('inf')
-    best_child_node = None
-    
-    state_tensor = torch.tensor(node.state, dtype=torch.float32).unsqueeze(0)
-    with torch.no_grad():
-        policy = policy_net(state_tensor).squeeze(0).numpy()
-        value = value_net(state_tensor).item()
-    
-    for i, child_node in enumerate(node.children):
-        policy_score = policy[i] if i < len(policy) else 0
-        score = child_node.value + exploration_constant * policy_score * np.sqrt(np.log(node.visits + 1) / (child_node.visits + 1))
-        if score > best_score:
-            best_score = score
-            best_child_node = child_node
+class MCTS:
+    def __init__(self, policy_net, value_net):
+        self.policy_net = policy_net
+        self.value_net = value_net
 
-    return best_child_node
+    def best_child(self, node):
+        exploration_constant = 1.4  
+        best_score = -float('inf')
+        best_child_node = None
+        
+        state_tensor = torch.tensor(node.state, dtype=torch.float32).unsqueeze(0)
+        with torch.no_grad():
+            policy = self.policy_net(state_tensor).squeeze(0).numpy()
+            value = self.value_net(state_tensor).item()
+        
+        for i, child_node in enumerate(node.children):
+            policy_score = policy[i] if i < len(policy) else 0
+            score = child_node.value + exploration_constant * policy_score * np.sqrt(np.log(node.visits + 1) / (child_node.visits + 1))
+            if score > best_score:
+                best_score = score
+                best_child_node = child_node
 
-def best_action(root):
-    return max(root.children, key=lambda child_node: child_node.visits).action
+        return best_child_node
+
+    def best_action(self, root):
+        return max(root.children, key=lambda child_node: child_node.visits).action
 
 class ReplayBuffer:
     def __init__(self, capacity):
@@ -420,67 +482,6 @@ class ReplayBuffer:
 
     def __len__(self):
         return len(self.buffer)
-
-def board_to_numeric(board):
-    numeric_board = np.zeros((8, 8), dtype=np.float32)
-    for row in range(8):
-        for col in range(8):
-            piece = board[row, col]
-            if piece is None:
-                numeric_board[row, col] = 0
-            elif piece.color == 'black':
-                numeric_board[row, col] = -1
-            else:
-                numeric_board[row, col] = 1
-    return numeric_board
-
-def choose_action(state, actions, policy_net, value_net, epsilon=0.1):
-    state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-    
-    with torch.no_grad():
-        policy = policy_net(state_tensor).squeeze(0).numpy()
-        value = value_net(state_tensor).item()
-
-    action_probabilities = np.zeros(len(actions))
-
-    if len(policy) == len(actions):
-        action_probabilities = np.exp(policy) / np.sum(np.exp(policy)) 
-    else:
-        for idx, action in enumerate(actions):
-            action_probabilities[idx] = policy[idx]
-
-        if np.sum(action_probabilities) > 0:
-            action_probabilities /= np.sum(action_probabilities)
-        else:
-            action_probabilities = np.ones(len(actions)) / len(actions)  
-
-    if np.random.rand() < epsilon:
-        return np.random.choice(len(actions)), None  
-    else:
-        return np.random.choice(len(actions), p=action_probabilities), value 
-
-def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
-    state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-    next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-    action_tensor = torch.tensor([action], dtype=torch.int64)
-    reward_tensor = torch.tensor([reward], dtype=torch.float32)
-
-    with torch.no_grad():
-        next_policy = policy_net(next_state_tensor).squeeze(0)
-        next_value = value_net(next_state_tensor).item()
-        next_action_probabilities = next_policy / torch.sum(next_policy)
-        next_value = torch.sum(next_action_probabilities * next_value)
-
-    policy = policy_net(state_tensor).squeeze(0)
-    value = value_net(state_tensor).item()
-    action_probability = policy[action_tensor]
-    advantage = reward_tensor + gamma * next_value - value
-    policy_loss = -torch.log(action_probability) * advantage
-    value_loss = advantage.pow(2)
-
-    optimizer.zero_grad()
-    (policy_loss + value_loss).backward()
-    optimizer.step()
 
 class PolicyNetwork(nn.Module):
     def __init__(self, num_actions):
@@ -509,7 +510,6 @@ class ValueNetwork(nn.Module):
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)
         return x
-
 
 if __name__ == "__main__":
     while True:

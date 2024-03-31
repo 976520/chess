@@ -8,6 +8,8 @@ class Knight(Piece):
         for d in directions:
             new_pos = position + d
             if np.all((0 <= new_pos) & (new_pos < 8)):
-                if (board[new_pos[0], new_pos[1]] is None) or (board[new_pos[0], new_pos[1]].color != self.color):
+                if board[new_pos[0], new_pos[1]] is None:
                     moves.append(tuple(new_pos))
+                elif board[new_pos[0], new_pos[1]].color != self.color:
+                    continue
         return moves

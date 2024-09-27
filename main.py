@@ -445,6 +445,10 @@ class Game:
                 self.switch_turn()
                 self.start_time = pygame.time.get_ticks()
 
+                if isinstance(self.board.board[move[0], move[1]], Pawn):
+                    if move[0] == 0 or move[0] == 7:
+                        self.board.board[move[0], move[1]].promote(self.board.board, move)
+
     def evaluate_board(self):
         piece_values = {
             King: 1000,

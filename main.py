@@ -326,32 +326,27 @@ class Game:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
-                
-
-
     def computer_move(self):
-        def choose_action(state, actions, policy_net):
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0) 
+        def choose_action(state, actions, policy_net, value_net):
+            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 policy = policy_net(state_tensor).squeeze(0).numpy()
-            
-            action_probs = np.zeros(len(actions))  
-            
+                value = value_net(state_tensor).item()
+
+            action_probs = np.zeros(len(actions))
+
             if len(policy) != len(actions):
                 for idx, action in enumerate(actions):
-                    action_probs[idx] = policy[idx] 
+                    action_probs[idx] = policy[idx]
 
-            # action_probs를 정규화
             if np.sum(action_probs) > 0:
-                action_probs /= np.sum(action_probs)  # 확률 정규화
+                action_probs /= np.sum(action_probs)
             else:
-                action_probs = np.ones(len(actions)) / len(actions)  
+                action_probs = np.ones(len(actions)) / len(actions)
 
-            return np.random.choice(len(actions), p=action_probs)
+            return np.random.choice(len(actions), p=action_probs), value
 
-
-
-        def update_policy_net(policy_net, optimizer, state, action, reward, next_state, next_actions, gamma):
+        def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
             action_tensor = torch.tensor([action], dtype=torch.int64)
@@ -359,23 +354,43 @@ class Game:
 
             with torch.no_grad():
                 next_policy = policy_net(next_state_tensor).squeeze(0)
+                next_value = value_net(next_state_tensor).item()
                 next_action_probs = next_policy / torch.sum(next_policy)
-                next_value = torch.sum(next_action_probs * reward_tensor)
+                next_value = torch.sum(next_action_probs * next_value)
 
             policy = policy_net(state_tensor).squeeze(0)
+            value = value_net(state_tensor).item()
             action_prob = policy[action_tensor]
-            loss = -torch.log(action_prob) * (reward_tensor + gamma * next_value)
+            advantage = reward_tensor + gamma * next_value - value
+            policy_loss = -torch.log(action_prob) * advantage
+            value_loss = advantage.pow(2)
 
             optimizer.zero_grad()
-            loss.backward()
+            (policy_loss + value_loss).backward()
             optimizer.step()
 
         class PolicyNetwork(nn.Module):
             def __init__(self, num_actions):
                 super(PolicyNetwork, self).__init__()
-                self.fc1 = nn.Linear(64, 128)
-                self.fc2 = nn.Linear(128, 128)
-                self.fc3 = nn.Linear(128, num_actions)  
+                self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+                self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+                self.fc1 = nn.Linear(128 * 8 * 8, 512)
+                self.fc2 = nn.Linear(512, num_actions)
+
+            def forward(self, x):
+                x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
+                x = torch.relu(self.conv2(x))
+                x = x.view(-1, 128 * 8 * 8)
+                x = torch.relu(self.fc1(x))
+                return self.fc2(x)
+
+
+        class ValueNetwork(nn.Module):
+            def __init__(self):
+                super(ValueNetwork, self).__init__()
+                self.fc1 = nn.Linear(64, 512)
+                self.fc2 = nn.Linear(512, 512)
+                self.fc3 = nn.Linear(512, 1)
 
             def forward(self, x):
                 x = torch.relu(self.fc1(x))
@@ -391,12 +406,12 @@ class Game:
                     if piece is None:
                         numeric_board[i, j] = 0
                     elif piece.color == 'black':
-                        numeric_board[i, j] = -1  
+                        numeric_board[i, j] = -1
                     else:
-                        numeric_board[i, j] = 1 
+                        numeric_board[i, j] = 1
             return numeric_board
 
-        state = board_to_numeric(self.board.board).flatten() 
+        state = board_to_numeric(self.board.board).flatten()
 
         actions = []
         for i in range(8):
@@ -408,14 +423,15 @@ class Game:
                         for move in possible_moves:
                             actions.append(((i, j), move))
 
-        num_actions = len(actions)  
-        policy_net = PolicyNetwork(num_actions) 
-        optimizer = optim.Adam(policy_net.parameters(), lr=0.001)  
+        num_actions = len(actions)
+        policy_net = PolicyNetwork(num_actions)
+        value_net = ValueNetwork()
+        optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.000001)
         gamma = 0.99
 
-        if actions:  
-            action_index = choose_action(state, actions, policy_net)
-            
+        if actions:
+            action_index, value = choose_action(state, actions, policy_net, value_net)
+
             action = actions[action_index]
             if action:
                 (i, j), move = action
@@ -439,7 +455,7 @@ class Game:
                                 for next_move in possible_moves:
                                     next_actions.append(((x, y), next_move))
 
-                update_policy_net(policy_net, optimizer, state, action_index, reward, next_state, next_actions, gamma)
+                update_policy_and_value_net(policy_net, value_net, optimizer, state, action_index, reward, next_state, next_actions, gamma)
 
                 self.board.move_piece((i, j), move)
                 self.switch_turn()

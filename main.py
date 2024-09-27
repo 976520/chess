@@ -327,7 +327,7 @@ class Game:
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
     def computer_move(self):
-        def choose_action(state, actions, policy_net, value_net):
+        def choose_action(state, actions, policy_net, value_net, epsilon=0.1):
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
             with torch.no_grad():
                 policy = policy_net(state_tensor).squeeze(0).numpy()
@@ -343,8 +343,16 @@ class Game:
                 action_probs /= np.sum(action_probs)
             else:
                 action_probs = np.ones(len(actions)) / len(actions)
+                
+            if np.random.rand() < epsilon:
+                return np.random.choice(len(actions)), None
+            else:
+                state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+                with torch.no_grad():
+                    policy = policy_net(state_tensor).squeeze(0).numpy()
+                action_probs = np.exp(policy) / np.sum(np.exp(policy))  
+                return np.random.choice(len(actions), p=action_probs), None
 
-            return np.random.choice(len(actions), p=action_probs), value
 
         def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
@@ -464,6 +472,24 @@ class Game:
                 if isinstance(self.board.board[move[0], move[1]], Pawn):
                     if move[0] == 0 or move[0] == 7:
                         self.board.board[move[0], move[1]].promote(self.board.board, move)
+
+        class ReplayBuffer:
+            def __init__(self, capacity):
+                self.buffer = []
+                self.capacity = capacity
+                self.position = 0
+
+            def push(self, state, action, reward, next_state):
+                if len(self.buffer) < self.capacity:
+                    self.buffer.append(None)
+                self.buffer[self.position] = (state, action, reward, next_state)
+                self.position = (self.position + 1) % self.capacity
+
+            def sample(self, batch_size):
+                return random.sample(self.buffer, batch_size)
+
+            def __len__(self):
+                return len(self.buffer)
 
     def evaluate_board(self):
         piece_values = {

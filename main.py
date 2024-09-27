@@ -13,13 +13,13 @@ from Knight import Knight
 from Pawn import Pawn
 from Queen import Queen
 
-class Board:
+class ChessBoard:
     def __init__(self, screen):
-        self.board = self.create_initial_board()
+        self.board = self.initialize_board()
         self.en_passant_target = None
         self.screen = screen
 
-    def create_initial_board(self):
+    def initialize_board(self):
         board = np.full((8, 8), None)
         for i in range(8):
             board[1, i] = Pawn('black')
@@ -76,17 +76,17 @@ class Board:
                 if end_pos[0] == 0 or end_pos[0] == 7:
                     piece.promote(self.board, end_pos)
 
-    def is_check(self, color):
-        king_pos = None
+    def is_in_check(self, color):
+        king_position = None
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
                 if piece:
                     if isinstance(piece, King):
                         if piece.color == color:
-                            king_pos = (i, j)
+                            king_position = (i, j)
                             break
-            if king_pos:
+            if king_position:
                 break
 
         for i in range(8):
@@ -94,12 +94,12 @@ class Board:
                 piece = self.board[i, j]
                 if piece and piece.color != color:
                     possible_moves = piece.get_possible_moves(self.board, (i, j))
-                    if possible_moves and king_pos in possible_moves:
+                    if possible_moves and king_position in possible_moves:
                         return True
         return False
 
     def is_checkmate(self, color):
-        if not self.is_check(color):
+        if not self.is_in_check(color):
             return False
 
         for i in range(8):
@@ -112,7 +112,7 @@ class Board:
                             original_piece = self.board[move[0], move[1]]
                             self.board[move[0], move[1]] = piece
                             self.board[i, j] = None
-                            if not self.is_check(color):
+                            if not self.is_in_check(color):
                                 self.board[i, j] = piece
                                 self.board[move[0], move[1]] = original_piece
                                 return False
@@ -121,7 +121,7 @@ class Board:
         return True
 
     def is_stalemate(self, color):
-        if self.is_check(color):
+        if self.is_in_check(color):
             return False
 
         for i in range(8):
@@ -134,7 +134,7 @@ class Board:
                             original_piece = self.board[move[0], move[1]]
                             self.board[move[0], move[1]] = piece
                             self.board[i, j] = None
-                            if not self.is_check(color):
+                            if not self.is_in_check(color):
                                 self.board[i, j] = piece
                                 self.board[move[0], move[1]] = original_piece
                                 return False
@@ -142,16 +142,16 @@ class Board:
                             self.board[move[0], move[1]] = original_piece
         return True
 
-class Game:
+class ChessGame:
     def __init__(self, play_with_computer=False):
         pygame.init()
         self.screen = pygame.display.set_mode((1000, 1000))
-        self.board = Board(self.screen)
+        self.board = ChessBoard(self.screen)
         self.current_turn = 'white'
         self.selected_piece = None
-        self.selected_pos = None
-        self.turn_time = 60
-        self.start_time = pygame.time.get_ticks()
+        self.selected_position = None
+        self.turn_time_limit = 60
+        self.turn_start_time = pygame.time.get_ticks()
         self.play_with_computer = play_with_computer
 
         pygame.display.set_caption("White turn")
@@ -195,8 +195,8 @@ class Game:
         self.screen.blit(self.background, (100, 100))  
         colors = [(255, 255, 255), (0, 0, 0)]
         font = pygame.font.SysFont(None, 24)
-        mouse_pos = pygame.mouse.get_pos()
-        mouse_row, mouse_col = (mouse_pos[1] - 100) // 80, (mouse_pos[0] - 100) // 80
+        mouse_position = pygame.mouse.get_pos()
+        mouse_row, mouse_col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
 
         for row in range(8):
             for col in range(8):
@@ -216,8 +216,8 @@ class Game:
             self.screen.blit(s, (mouse_col * 80 + 100, mouse_row * 80 + 100))
 
         if self.selected_piece:
-            pygame.draw.rect(self.screen, (0, 0, 225), pygame.Rect(self.selected_pos[1] * 80 + 100, self.selected_pos[0] * 80 + 100, 80, 80), 3)
-            possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_pos)
+            pygame.draw.rect(self.screen, (0, 0, 225), pygame.Rect(self.selected_position[1] * 80 + 100, self.selected_position[0] * 80 + 100, 80, 80), 3)
+            possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
             if possible_moves:
                 for move in possible_moves:
                     if self.board.board[move[0], move[1]] is None:
@@ -225,16 +225,16 @@ class Game:
                     else:
                         pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 10)
 
-        if self.board.is_check(self.current_turn):
-            king_pos = None
+        if self.board.is_in_check(self.current_turn):
+            king_position = None
             for i in range(8):
                 for j in range(8):
                     piece = self.board.board[i, j]
                     if piece and isinstance(piece, King):
                         if piece.color == self.current_turn:
-                            king_pos = (i, j)
+                            king_position = (i, j)
                             break
-                if king_pos:
+                if king_position:
                     break
 
             for i in range(8):
@@ -243,26 +243,26 @@ class Game:
                     if piece:
                         if piece.color != self.current_turn:
                             possible_moves = piece.get_possible_moves(self.board.board, (i, j))
-                            if possible_moves and king_pos in possible_moves:
+                            if possible_moves and king_position in possible_moves:
                                 pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(j * 80 + 100, i * 80 + 100, 80, 80), 3)
 
     def display_timer(self):
-        elapsed_time = (pygame.time.get_ticks() - self.start_time) / 1000
-        remaining_time = max(0, self.turn_time - elapsed_time)
+        elapsed_time = (pygame.time.get_ticks() - self.turn_start_time) / 1000
+        remaining_time = max(0, self.turn_time_limit - elapsed_time)
         if remaining_time == 0:
             self.switch_turn() 
-            self.start_time = pygame.time.get_ticks() 
+            self.turn_start_time = pygame.time.get_ticks() 
 
-        timer_width = int((remaining_time / self.turn_time) * 640)
+        timer_width = int((remaining_time / self.turn_time_limit) * 640)
         
         if self.current_turn == 'white': 
-            if self.board.is_check('white'):
+            if self.board.is_in_check('white'):
                 timer_color = (255, 0, 0)
             else:
                 timer_color = (0, 0, 255)
             pygame.draw.rect(self.screen, timer_color, pygame.Rect(100, 750, timer_width, 5)) 
         elif self.current_turn == 'black':
-            if self.board.is_check('black'):
+            if self.board.is_in_check('black'):
                 timer_color = (255, 0, 0)
             else:
                 timer_color = (0, 0, 255)
@@ -279,19 +279,19 @@ class Game:
                 pos = pygame.mouse.get_pos()
                 row, col = (pos[1] - 100) // 80, (pos[0] - 100) // 80
                 if self.selected_piece:
-                    possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_pos)
+                    possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
                     if possible_moves and (row, col) in possible_moves:
-                        self.board.move_piece(self.selected_pos, (row, col))
+                        self.board.move_piece(self.selected_position, (row, col))
                         self.switch_turn()
-                        self.start_time = pygame.time.get_ticks()
+                        self.turn_start_time = pygame.time.get_ticks()
                     self.selected_piece = None
-                    self.selected_pos = None
+                    self.selected_position = None
                 else:
                     piece = self.board.board[row, col]
                     if piece:
                         if piece.color == self.current_turn:
                             self.selected_piece = piece
-                            self.selected_pos = (row, col)
+                            self.selected_position = (row, col)
 
     def switch_turn(self):
         self.current_turn = 'black' if self.current_turn == 'white' else 'white' 
@@ -370,7 +370,7 @@ class Game:
         return best_action(root)
 
     def best_child(node, policy_net, value_net):
-        c = 1.4  # Exploration coefficient
+        c = 1.4  
         best_score = -float('inf')
         best_child = None
         
@@ -579,7 +579,7 @@ class Game:
 
                 self.board.move_piece((i, j), move)
                 self.switch_turn()
-                self.start_time = pygame.time.get_ticks()
+                self.turn_start_time = pygame.time.get_ticks()
 
                 if isinstance(self.board.board[move[0], move[1]], Pawn):
                     if move[0] == 0 or move[0] == 7:
@@ -635,10 +635,10 @@ def main_menu():
                     selected_option = (selected_option + 1) % len(options)
                 elif event.key == pygame.K_RETURN:
                     if selected_option == 0:
-                        game = Game()
+                        game = ChessGame()
                         game.play()
                     elif selected_option == 1:
-                        game = Game(play_with_computer=True)
+                        game = ChessGame(play_with_computer=True)
                         game.play()
                     elif selected_option == 2:
                         pygame.quit()

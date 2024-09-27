@@ -326,33 +326,145 @@ class Game:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
+    
+    class MCTSNode:
+        def __init__(self, state, parent=None, action=None):
+            self.state = state
+            self.parent = parent
+            self.action = action
+            self.children = []
+            self.visits = 0
+            self.value = 0.0
+
+        def is_leaf(self):
+            return len(self.children) == 0
+
+        def expand(self, actions):
+            for action in actions:
+                next_state = self.get_next_state(self.state, action)
+                self.children.append(MCTSNode(next_state, parent=self, action=action))
+
+        def get_next_state(self, state, action):
+            pass
+
+        def update(self, reward):
+            self.visits += 1
+            self.value += (reward - self.value) / self.visits
+
+    def mcts(root, policy_net, value_net, num_simulations):
+        for _ in range(num_simulations):
+            node = root
+            while not node.is_leaf():
+                node = best_child(node, policy_net, value_net)
+            
+            actions = get_actions_for_state(node.state)
+            if actions:
+                node.expand(actions)
+            
+            reward = simulate_random_game(node.state)
+            
+            while node:
+                node.update(reward)
+                node = node.parent
+
+        return best_action(root)
+
+    def best_child(node, policy_net, value_net):
+        c = 1.4  # Exploration coefficient
+        best_score = -float('inf')
+        best_child = None
+        
+        for child in node.children:
+            score = child.value + c * np.sqrt(np.log(node.visits + 1) / (child.visits + 1))
+            if score > best_score:
+                best_score = score
+                best_child = child
+
+        return best_child
+
+    def best_action(root):
+        return max(root.children, key=lambda x: x.visits).action
+
+    class ReplayBuffer:
+        def __init__(self, capacity):
+            self.buffer = []
+            self.capacity = capacity
+            self.position = 0
+
+        def push(self, state, action, reward, next_state):
+            if len(self.buffer) < self.capacity:
+                self.buffer.append(None)
+            self.buffer[self.position] = (state, action, reward, next_state)
+            self.position = (self.position + 1) % self.capacity
+
+        def sample(self, batch_size):
+            return random.sample(self.buffer, batch_size)
+
+        def __len__(self):
+            return len(self.buffer)
+
+    def board_to_numeric(board):
+        numeric_board = np.zeros((8, 8), dtype=np.float32)
+        for i in range(8):
+            for j in range(8):
+                piece = board[i, j]
+                if piece is None:
+                    numeric_board[i, j] = 0
+                elif piece.color == 'black':
+                    numeric_board[i, j] = -1
+                else:
+                    numeric_board[i, j] = 1
+        return numeric_board
+
+    def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
+        action_tensor = torch.tensor([action], dtype=torch.int64)
+        reward_tensor = torch.tensor([reward], dtype=torch.float32)
+
+        with torch.no_grad():
+            next_policy = policy_net(next_state_tensor).squeeze(0)
+            next_value = value_net(next_state_tensor).item()
+            next_action_probs = next_policy / torch.sum(next_policy)
+            next_value = torch.sum(next_action_probs * next_value)
+
+        policy = policy_net(state_tensor).squeeze(0)
+        value = value_net(state_tensor).item()
+        action_prob = policy[action_tensor]
+        advantage = reward_tensor + gamma * next_value - value
+        policy_loss = -torch.log(action_prob) * advantage
+        value_loss = advantage.pow(2)
+
+        optimizer.zero_grad()
+        (policy_loss + value_loss).backward()
+        optimizer.step()
+
     def computer_move(self):
+        
         def choose_action(state, actions, policy_net, value_net, epsilon=0.1):
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+            
             with torch.no_grad():
                 policy = policy_net(state_tensor).squeeze(0).numpy()
                 value = value_net(state_tensor).item()
 
             action_probs = np.zeros(len(actions))
 
-            if len(policy) != len(actions):
+            if len(policy) == len(actions):
+                action_probs = np.exp(policy) / np.sum(np.exp(policy)) 
+            else:
                 for idx, action in enumerate(actions):
                     action_probs[idx] = policy[idx]
 
-            if np.sum(action_probs) > 0:
-                action_probs /= np.sum(action_probs)
-            else:
-                action_probs = np.ones(len(actions)) / len(actions)
-                
-            if np.random.rand() < epsilon:
-                return np.random.choice(len(actions)), None
-            else:
-                state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-                with torch.no_grad():
-                    policy = policy_net(state_tensor).squeeze(0).numpy()
-                action_probs = np.exp(policy) / np.sum(np.exp(policy))  
-                return np.random.choice(len(actions), p=action_probs), None
+                if np.sum(action_probs) > 0:
+                    action_probs /= np.sum(action_probs)
+                else:
+                    action_probs = np.ones(len(actions)) / len(actions)  
 
+            if np.random.rand() < epsilon:
+                return np.random.choice(len(actions)), None  
+            else:
+                return np.random.choice(len(actions), p=action_probs), value 
 
         def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
             state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
@@ -473,23 +585,6 @@ class Game:
                     if move[0] == 0 or move[0] == 7:
                         self.board.board[move[0], move[1]].promote(self.board.board, move)
 
-        class ReplayBuffer:
-            def __init__(self, capacity):
-                self.buffer = []
-                self.capacity = capacity
-                self.position = 0
-
-            def push(self, state, action, reward, next_state):
-                if len(self.buffer) < self.capacity:
-                    self.buffer.append(None)
-                self.buffer[self.position] = (state, action, reward, next_state)
-                self.position = (self.position + 1) % self.capacity
-
-            def sample(self, batch_size):
-                return random.sample(self.buffer, batch_size)
-
-            def __len__(self):
-                return len(self.buffer)
 
     def evaluate_board(self):
         piece_values = {

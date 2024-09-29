@@ -198,6 +198,12 @@ class Game:
         mouse_position = pygame.mouse.get_pos()
         mouse_row, mouse_col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
 
+        self.draw_board(colors, font)
+        self.highlight_mouse_position(mouse_row, mouse_col)
+        self.highlight_selected_piece()
+        self.highlight_check()
+
+    def draw_board(self, colors, font):
         for row in range(8):
             for col in range(8):
                 color = colors[(row + col) % 2]
@@ -210,11 +216,13 @@ class Game:
                 coord_text = font.render(f"{chr(97 + col)}{8 - row}", True, (0, 0, 0, 128) if color == (255, 255, 255) else (255, 255, 255, 128))
                 self.screen.blit(coord_text, (col * 80 + 105, row * 80 + 105))
 
+    def highlight_mouse_position(self, mouse_row, mouse_col):
         if (0 <= mouse_row < 8) and (0 <= mouse_col < 8):
             s = pygame.Surface((80, 80), pygame.SRCALPHA)
             s.fill((255, 255, 255, 128))
             self.screen.blit(s, (mouse_col * 80 + 100, mouse_row * 80 + 100))
 
+    def highlight_selected_piece(self):
         if self.selected_piece:
             pygame.draw.rect(self.screen, (0, 0, 225), pygame.Rect(self.selected_position[1] * 80 + 100, self.selected_position[0] * 80 + 100, 80, 80), 3)
             possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
@@ -225,26 +233,24 @@ class Game:
                     else:
                         pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 10)
 
+    def highlight_check(self):
         if self.board.is_in_check(self.current_turn):
-            king_position = None
+            king_position = self.find_king_position()
             for i in range(8):
                 for j in range(8):
                     piece = self.board.board[i, j]
-                    if piece and isinstance(piece, King):
-                        if piece.color == self.current_turn:
-                            king_position = (i, j)
-                            break
-                if king_position:
-                    break
+                    if piece and piece.color != self.current_turn:
+                        possible_moves = piece.get_possible_moves(self.board.board, (i, j))
+                        if possible_moves and king_position in possible_moves:
+                            pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(j * 80 + 100, i * 80 + 100, 80, 80), 3)
 
-            for i in range(8):
-                for j in range(8):
-                    piece = self.board.board[i, j]
-                    if piece:
-                        if piece.color != self.current_turn:
-                            possible_moves = piece.get_possible_moves(self.board.board, (i, j))
-                            if possible_moves and king_position in possible_moves:
-                                pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(j * 80 + 100, i * 80 + 100, 80, 80), 3)
+    def find_king_position(self):
+        for i in range(8):
+            for j in range(8):
+                piece = self.board.board[i, j]
+                if piece and isinstance(piece, King) and piece.color == self.current_turn:
+                    return (i, j)
+        return None
 
     def display_timer(self):
         elapsed_time = (pygame.time.get_ticks() - self.turn_start_time) / 1000

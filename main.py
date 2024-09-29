@@ -13,7 +13,7 @@ from Knight import Knight
 from Pawn import Pawn
 from Queen import Queen
 
-class ChessBoard:
+class Board:
     def __init__(self, screen):
         self.board = self.initialize_board()
         self.en_passant_target = None
@@ -142,11 +142,11 @@ class ChessBoard:
                             self.board[move[0], move[1]] = original_piece
         return True
 
-class ChessGame:
+class Game:
     def __init__(self, play_with_computer=False):
         pygame.init()
         self.screen = pygame.display.set_mode((1000, 1000))
-        self.board = ChessBoard(self.screen)
+        self.board = Board(self.screen)
         self.current_turn = 'white'
         self.selected_piece = None
         self.selected_position = None
@@ -635,10 +635,10 @@ def main_menu():
                     selected_option = (selected_option + 1) % len(options)
                 elif event.key == pygame.K_RETURN:
                     if selected_option == 0:
-                        game = ChessGame()
+                        game = Game()
                         game.play()
                     elif selected_option == 1:
-                        game = ChessGame(play_with_computer=True)
+                        game = Game(play_with_computer=True)
                         game.play()
                     elif selected_option == 2:
                         pygame.quit()

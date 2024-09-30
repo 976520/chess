@@ -12,17 +12,17 @@ def main_menu():
     computer_img = pygame.image.load("assets/Computer.png").convert_alpha()
     exit_img = pygame.image.load("assets/Exit.png").convert_alpha()
 
-    human_img_with_bg = pygame.Surface(human_img.get_size(), pygame.SRCALPHA)
+    human_img_with_bg = pygame.Surface((human_img.get_width() + 20, human_img.get_height() + 20), pygame.SRCALPHA)
     human_img_with_bg.fill((255, 255, 255))
-    human_img_with_bg.blit(human_img, (0, 0))
+    human_img_with_bg.blit(human_img, (10, 10))
 
-    computer_img_with_bg = pygame.Surface(computer_img.get_size(), pygame.SRCALPHA)
+    computer_img_with_bg = pygame.Surface((computer_img.get_width() + 20, computer_img.get_height() + 20), pygame.SRCALPHA)
     computer_img_with_bg.fill((255, 255, 255))
-    computer_img_with_bg.blit(computer_img, (0, 0))
+    computer_img_with_bg.blit(computer_img, (10, 10))
 
-    exit_img_with_bg = pygame.Surface(exit_img.get_size(), pygame.SRCALPHA)
+    exit_img_with_bg = pygame.Surface((exit_img.get_width() + 20, exit_img.get_height() + 20), pygame.SRCALPHA)
     exit_img_with_bg.fill((255, 255, 255))
-    exit_img_with_bg.blit(exit_img, (0, 0))
+    exit_img_with_bg.blit(exit_img, (10, 10))
 
     options = [human_img_with_bg, computer_img_with_bg, exit_img_with_bg]
     option_texts = ["play with human(local)", "play with computer", "exit"]
@@ -31,7 +31,7 @@ def main_menu():
     while True:
         screen.fill((0, 0, 0))
         for i, option in enumerate(options):
-            x_position = 100 + i * (option.get_width() + 250)  
+            x_position = 100 + i * (option.get_width() + 230)  
             screen.blit(option, (x_position, 400))
             if i == selected_option:
                 pygame.draw.rect(screen, (0, 255, 0), (x_position, 400, option.get_width(), option.get_height()), 5)
@@ -63,7 +63,7 @@ def main_menu():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 for i, option in enumerate(options):
-                    option_rect = pygame.Rect(100 + i * (option.get_width() + 300), 400, option.get_width(), option.get_height())  # Maximized the gap between buttons
+                    option_rect = pygame.Rect(100 + i * (option.get_width() + 300), 400, option.get_width(), option.get_height()) 
                     if option_rect.collidepoint(mouse_x, mouse_y):
                         selected_option = i
                         if selected_option == 0:

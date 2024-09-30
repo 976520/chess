@@ -4,6 +4,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+import random
+import pickle
 
 from Pieces.King import King
 from Pieces.Rook import Rook
@@ -26,6 +28,7 @@ class Game:
         self.play_with_computer = play_with_computer
         self.computer_vs_computer = computer_vs_computer
         self.kill_log = []
+        self.replay_buffer = self.ReplayBuffer(10000)  # Fixed bug by changing ReplayBuffer to self.ReplayBuffer
 
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
@@ -301,7 +304,7 @@ class Game:
         def expand(self, actions):
             for action in actions:
                 next_state = self.get_next_state(self.state, action)
-                self.children.append(MCTSNode(next_state, parent=self, action=action))
+                self.children.append(Game.MCTSNode(next_state, parent=self, action=action))  # Fixed bug by changing MCTSNode to Game.MCTSNode
 
         def get_next_state(self, state, action):
             new_board = np.copy(state)
@@ -543,6 +546,13 @@ class Game:
                 ]
                 pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
                 pygame.display.flip()
+
+        torch.save(policy_net.state_dict(), 'policy_net.pth')
+        torch.save(value_net.state_dict(), 'value_net.pth')
+
+        with open('replay_buffer.pkl', 'wb') as f:
+            pickle.dump(self.replay_buffer, f)
+
     def evaluate_board(self):
         piece_values = {
             King: 1000,

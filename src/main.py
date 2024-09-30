@@ -264,7 +264,7 @@ class Game:
         policy_net = PolicyNetwork(num_actions)
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.000001)
-        gamma = 0.99
+        gamma = 0.99  
 
         if actions:
             action_index, value = self.choose_action(state, actions, policy_net, value_net)
@@ -281,8 +281,8 @@ class Game:
 
                 reward = self.evaluate_board()
                 next_state = self.board_to_numeric(self.board.board).flatten()
-                next_actions = []
 
+                next_actions = []
                 for row in range(8):
                     for col in range(8):
                         piece = self.board.board[row, col]

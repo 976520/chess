@@ -548,9 +548,8 @@ class Game:
 
     def display_kill_log(self):
         x_offset = 750
-        y_offset = 100 + len(self.kill_log) * 100  
-        for killer, killed in reversed(self.kill_log):  
-            y_offset -= 100  
+        y_offset = 100 + (len(self.kill_log) - 1) * 100 
+        for killer, killed in (self.kill_log):  
             killer_image = self.piece_images[type(killer).__name__ + '_' + killer.color[0]]
             killed_image = self.piece_images[type(killed).__name__ + '_' + killed.color[0]]
             self.screen.blit(killer_image, (x_offset, y_offset))
@@ -566,6 +565,7 @@ class Game:
             pygame.draw.line(self.screen, (255, 0, 0), start_pos, end_pos, 5)
             pygame.draw.polygon(self.screen, (255, 0, 0), arrow_points)
             self.screen.blit(killed_image, (x_offset + 120, y_offset))
+            y_offset -= 100  
 
 def main_menu():
     pygame.init()

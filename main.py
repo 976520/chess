@@ -334,12 +334,12 @@ class Game:
                     return
 
     def computer_move(self):
-        ai = ChessAI(self.board)
+        ai = AI(self.board)
         ai.make_move()
         self.switch_turn()
         self.turn_start_time = pygame.time.get_ticks()
 
-class ChessAI:
+class AI:
     def __init__(self, board):
         self.board = board
         self.policy_net = self.PolicyNetwork()
@@ -362,7 +362,7 @@ class ChessAI:
         def expand(self, actions):
             for action in actions:
                 next_state = self.get_next_state(self.state, action)
-                self.children.append(ChessAI.MCTSNode(next_state, parent=self, action=action))
+                self.children.append(AI.MCTSNode(next_state, parent=self, action=action))
 
         def get_next_state(self, state, action):
             new_state = state.copy()
@@ -378,7 +378,7 @@ class ChessAI:
 
     class PolicyNetwork(nn.Module):
         def __init__(self):
-            super(ChessAI.PolicyNetwork, self).__init__()
+            super(AI.PolicyNetwork, self).__init__()
             self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
             self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
             self.fc1 = nn.Linear(128 * 8 * 8, 512)
@@ -393,7 +393,7 @@ class ChessAI:
 
     class ValueNetwork(nn.Module):
         def __init__(self):
-            super(ChessAI.ValueNetwork, self).__init__()
+            super(AI.ValueNetwork, self).__init__()
             self.fc1 = nn.Linear(64, 512)
             self.fc2 = nn.Linear(512, 512)
             self.fc3 = nn.Linear(512, 1)

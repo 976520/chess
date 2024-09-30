@@ -1,6 +1,6 @@
 import numpy as np
 from Piece import Piece
-from Queen import Queen
+from Pieces.Queen import Queen
 
 class Pawn(Piece):
     def __init__(self, color):

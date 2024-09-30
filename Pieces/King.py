@@ -1,6 +1,7 @@
 import numpy as np
 from Piece import Piece
-from Rook import Rook
+
+from Pieces.Rook import Rook
 
 class King(Piece):
     def __init__(self, color):

@@ -5,14 +5,13 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from King import King
-from Rook import Rook
-from Bishop import Bishop
-from Knight import Knight
-from Pawn import Pawn
-from Queen import Queen
+from Pieces.King import King
+from Pieces.Rook import Rook
+from Pieces.Bishop import Bishop
+from Pieces.Knight import Knight
+from Pieces.Pawn import Pawn
+from Pieces.Queen import Queen
 from Board import Board
-
 
 class Game:
     def __init__(self, play_with_computer=False):
@@ -138,8 +137,7 @@ class Game:
                 (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
             ]
             pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
-            pygame.draw.circle(self.screen, (0, 0, 255), (start_x, start_y), 7)  
-
+            
         if self.board.computer_move_start and self.board.computer_move_end:
             start_x = self.board.computer_move_start[1] * 80 + 140
             start_y = self.board.computer_move_start[0] * 80 + 140

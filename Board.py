@@ -5,12 +5,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
-from King import King
-from Rook import Rook
-from Bishop import Bishop
-from Knight import Knight
-from Pawn import Pawn
-from Queen import Queen
+from Pieces.King import King
+from Pieces.Rook import Rook
+from Pieces.Bishop import Bishop
+from Pieces.Knight import Knight
+from Pieces.Pawn import Pawn
+from Pieces.Queen import Queen
 
 class Board:
     def __init__(self, screen):

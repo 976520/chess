@@ -332,7 +332,21 @@ class Game:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
-    
+
+    def computer_move(self):
+        ai = ChessAI(self.board)
+        ai.make_move()
+        self.switch_turn()
+        self.turn_start_time = pygame.time.get_ticks()
+
+class ChessAI:
+    def __init__(self, board):
+        self.board = board
+        self.policy_net = self.PolicyNetwork()
+        self.value_net = self.ValueNetwork()
+        self.optimizer = optim.Adam(list(self.policy_net.parameters()) + list(self.value_net.parameters()), lr=0.000001)
+        self.gamma = 0.99
+
     class MCTSNode:
         def __init__(self, state, parent=None, action=None):
             self.state = state
@@ -341,55 +355,54 @@ class Game:
             self.children = []
             self.visits = 0
             self.value = 0.0
-
+            
         def is_leaf(self):
             return len(self.children) == 0
 
         def expand(self, actions):
             for action in actions:
                 next_state = self.get_next_state(self.state, action)
-                self.children.append(MCTSNode(next_state, parent=self, action=action))
+                self.children.append(ChessAI.MCTSNode(next_state, parent=self, action=action))
 
         def get_next_state(self, state, action):
-            pass
+            new_state = state.copy()
+            (start_pos, end_pos) = action
+            piece = new_state[start_pos[0], start_pos[1]]
+            new_state[end_pos[0], end_pos[1]] = piece
+            new_state[start_pos[0], start_pos[1]] = None
+            return new_state
 
         def update(self, reward):
             self.visits += 1
             self.value += (reward - self.value) / self.visits
 
-    def mcts(root, policy_net, value_net, num_simulations):
-        for _ in range(num_simulations):
-            node = root
-            while not node.is_leaf():
-                node = best_child(node, policy_net, value_net)
-            
-            actions = get_actions_for_state(node.state)
-            if actions:
-                node.expand(actions)
-            
-            reward = simulate_random_game(node.state)
-            
-            while node:
-                node.update(reward)
-                node = node.parent
+    class PolicyNetwork(nn.Module):
+        def __init__(self):
+            super(ChessAI.PolicyNetwork, self).__init__()
+            self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+            self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+            self.fc1 = nn.Linear(128 * 8 * 8, 512)
+            self.fc2 = nn.Linear(512, 1)
 
-        return best_action(root)
+        def forward(self, x):
+            x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
+            x = torch.relu(self.conv2(x))
+            x = x.view(-1, 128 * 8 * 8)
+            x = torch.relu(self.fc1(x))
+            return self.fc2(x)
 
-    def best_child(node, policy_net, value_net):
-        c = 1.4  
-        best_score = -float('inf')
-        best_child = None
-        
-        for child in node.children:
-            score = child.value + c * np.sqrt(np.log(node.visits + 1) / (child.visits + 1))
-            if score > best_score:
-                best_score = score
-                best_child = child
+    class ValueNetwork(nn.Module):
+        def __init__(self):
+            super(ChessAI.ValueNetwork, self).__init__()
+            self.fc1 = nn.Linear(64, 512)
+            self.fc2 = nn.Linear(512, 512)
+            self.fc3 = nn.Linear(512, 1)
 
-        return best_child
-
-    def best_action(root):
-        return max(root.children, key=lambda x: x.visits).action
+        def forward(self, x):
+            x = torch.relu(self.fc1(x))
+            x = torch.relu(self.fc2(x))
+            x = self.fc3(x)
+            return x
 
     class ReplayBuffer:
         def __init__(self, capacity):
@@ -409,7 +422,41 @@ class Game:
         def __len__(self):
             return len(self.buffer)
 
-    def board_to_numeric(board):
+    def mcts(self, root, num_simulations):
+        for _ in range(num_simulations):
+            node = root
+            while not node.is_leaf():
+                node = self.best_child(node)
+            
+            actions = self.get_actions_for_state(node.state)
+            if actions:
+                node.expand(actions)
+            
+            reward = self.simulate_random_game(node.state)
+            
+            while node:
+                node.update(reward)
+                node = node.parent
+
+        return self.best_action(root)
+
+    def best_child(self, node):
+        c = 1.4  
+        best_score = -float('inf')
+        best_child = None
+        
+        for child in node.children:
+            score = child.value + c * np.sqrt(np.log(node.visits + 1) / (child.visits + 1))
+            if score > best_score:
+                best_score = score
+                best_child = child
+
+        return best_child
+
+    def best_action(self, root):
+        return max(root.children, key=lambda x: x.visits).action
+
+    def board_to_numeric(self, board):
         numeric_board = np.zeros((8, 8), dtype=np.float32)
         for i in range(8):
             for j in range(8):
@@ -422,122 +469,57 @@ class Game:
                     numeric_board[i, j] = 1
         return numeric_board
 
-    def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
+    def choose_action(self, state, actions, epsilon=0.1):
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        
+        with torch.no_grad():
+            policy = self.policy_net(state_tensor).squeeze(0).numpy()
+            value = self.value_net(state_tensor).item()
+
+        action_probs = np.zeros(len(actions))
+
+        if len(policy) == len(actions):
+            action_probs = np.exp(policy) / np.sum(np.exp(policy)) 
+        else:
+            for idx, action in enumerate(actions):
+                if idx < len(policy):
+                    action_probs[idx] = policy[idx]
+
+            if np.sum(action_probs) > 0:
+                action_probs /= np.sum(action_probs)
+            else:
+                action_probs = np.ones(len(actions)) / len(actions)  
+
+        if np.random.rand() < epsilon:
+            return np.random.choice(len(actions)), None  
+        else:
+            return np.random.choice(len(actions), p=action_probs), value 
+
+    def update_policy_and_value_net(self, state, action, reward, next_state, next_actions):
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
         action_tensor = torch.tensor([action], dtype=torch.int64)
         reward_tensor = torch.tensor([reward], dtype=torch.float32)
 
         with torch.no_grad():
-            next_policy = policy_net(next_state_tensor).squeeze(0)
-            next_value = value_net(next_state_tensor).item()
+            next_policy = self.policy_net(next_state_tensor).squeeze(0)
+            next_value = self.value_net(next_state_tensor).item()
             next_action_probs = next_policy / torch.sum(next_policy)
             next_value = torch.sum(next_action_probs * next_value)
 
-        policy = policy_net(state_tensor).squeeze(0)
-        value = value_net(state_tensor).item()
+        policy = self.policy_net(state_tensor).squeeze(0)
+        value = self.value_net(state_tensor).item()
         action_prob = policy[action_tensor]
-        advantage = reward_tensor + gamma * next_value - value
+        advantage = reward_tensor + self.gamma * next_value - value
         policy_loss = -torch.log(action_prob) * advantage
         value_loss = advantage.pow(2)
 
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
         (policy_loss + value_loss).backward()
-        optimizer.step()
+        self.optimizer.step()
 
-    def computer_move(self):
-        
-        def choose_action(state, actions, policy_net, value_net, epsilon=0.1):
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-            
-            with torch.no_grad():
-                policy = policy_net(state_tensor).squeeze(0).numpy()
-                value = value_net(state_tensor).item()
-
-            action_probs = np.zeros(len(actions))
-
-            if len(policy) == len(actions):
-                action_probs = np.exp(policy) / np.sum(np.exp(policy)) 
-            else:
-                for idx, action in enumerate(actions):
-                    action_probs[idx] = policy[idx]
-
-                if np.sum(action_probs) > 0:
-                    action_probs /= np.sum(action_probs)
-                else:
-                    action_probs = np.ones(len(actions)) / len(actions)  
-
-            if np.random.rand() < epsilon:
-                return np.random.choice(len(actions)), None  
-            else:
-                return np.random.choice(len(actions), p=action_probs), value 
-
-        def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-            next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-            action_tensor = torch.tensor([action], dtype=torch.int64)
-            reward_tensor = torch.tensor([reward], dtype=torch.float32)
-
-            with torch.no_grad():
-                next_policy = policy_net(next_state_tensor).squeeze(0)
-                next_value = value_net(next_state_tensor).item()
-                next_action_probs = next_policy / torch.sum(next_policy)
-                next_value = torch.sum(next_action_probs * next_value)
-
-            policy = policy_net(state_tensor).squeeze(0)
-            value = value_net(state_tensor).item()
-            action_prob = policy[action_tensor]
-            advantage = reward_tensor + gamma * next_value - value
-            policy_loss = -torch.log(action_prob) * advantage
-            value_loss = advantage.pow(2)
-
-            optimizer.zero_grad()
-            (policy_loss + value_loss).backward()
-            optimizer.step()
-
-        class PolicyNetwork(nn.Module):
-            def __init__(self, num_actions):
-                super(PolicyNetwork, self).__init__()
-                self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
-                self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-                self.fc1 = nn.Linear(128 * 8 * 8, 512)
-                self.fc2 = nn.Linear(512, num_actions)
-
-            def forward(self, x):
-                x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
-                x = torch.relu(self.conv2(x))
-                x = x.view(-1, 128 * 8 * 8)
-                x = torch.relu(self.fc1(x))
-                return self.fc2(x)
-
-
-        class ValueNetwork(nn.Module):
-            def __init__(self):
-                super(ValueNetwork, self).__init__()
-                self.fc1 = nn.Linear(64, 512)
-                self.fc2 = nn.Linear(512, 512)
-                self.fc3 = nn.Linear(512, 1)
-
-            def forward(self, x):
-                x = torch.relu(self.fc1(x))
-                x = torch.relu(self.fc2(x))
-                x = self.fc3(x)
-                return x
-
-        def board_to_numeric(board):
-            numeric_board = np.zeros((8, 8), dtype=np.float32)
-            for i in range(8):
-                for j in range(8):
-                    piece = board[i, j]
-                    if piece is None:
-                        numeric_board[i, j] = 0
-                    elif piece.color == 'black':
-                        numeric_board[i, j] = -1
-                    else:
-                        numeric_board[i, j] = 1
-            return numeric_board
-
-        state = board_to_numeric(self.board.board).flatten()
+    def make_move(self):
+        state = self.board_to_numeric(self.board.board).flatten()
 
         actions = []
         for i in range(8):
@@ -550,13 +532,9 @@ class Game:
                             actions.append(((i, j), move))
 
         num_actions = len(actions)
-        policy_net = PolicyNetwork(num_actions)
-        value_net = ValueNetwork()
-        optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.000001)
-        gamma = 0.99
 
         if actions:
-            action_index, value = choose_action(state, actions, policy_net, value_net)
+            action_index, value = self.choose_action(state, actions)
 
             action = actions[action_index]
             if action:
@@ -569,7 +547,7 @@ class Game:
                 self.board.board[i, j] = None
 
                 reward = self.evaluate_board()
-                next_state = board_to_numeric(self.board.board).flatten()
+                next_state = self.board_to_numeric(self.board.board).flatten()
                 next_actions = []
 
                 for x in range(8):
@@ -581,16 +559,13 @@ class Game:
                                 for next_move in possible_moves:
                                     next_actions.append(((x, y), next_move))
 
-                update_policy_and_value_net(policy_net, value_net, optimizer, state, action_index, reward, next_state, next_actions, gamma)
+                self.update_policy_and_value_net(state, action_index, reward, next_state, next_actions)
 
                 self.board.move_piece((i, j), move)
-                self.switch_turn()
-                self.turn_start_time = pygame.time.get_ticks()
 
                 if isinstance(self.board.board[move[0], move[1]], Pawn):
                     if move[0] == 0 or move[0] == 7:
                         self.board.board[move[0], move[1]].promote(self.board.board, move)
-
 
     def evaluate_board(self):
         piece_values = {

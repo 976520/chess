@@ -126,7 +126,7 @@ class Game:
         self.play_with_computer = play_with_computer
         self.computer_vs_computer = computer_vs_computer
         self.kill_log = []
-        self.replay_buffer = ReplayBuffer(1000000)  
+        self.replay_buffer = ReplayBuffer(10000)  
 
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
@@ -271,7 +271,7 @@ class Game:
             root = MCTSNode(state)
             root.expand(actions)
 
-            for _ in range(100):  
+            for _ in range(100): # 하...  
                 node = root
                 while not node.is_leaf():
                     node = mcts.best_child(node)

@@ -1,9 +1,6 @@
 import pygame
 import sys
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
 
 from Pieces.King import King
 from Pieces.Rook import Rook
@@ -16,6 +13,7 @@ class Board:
     def __init__(self, screen):
         self.board = self.initialize_board()
         self.en_passant_target = None
+        self.en_passant_turn = None  # Track the turn when en_passant_target was set
         self.screen = screen
         self.last_move_start = None
         self.last_move_end = None
@@ -63,6 +61,8 @@ class Board:
 
             if isinstance(piece, Pawn):
                 if end_pos == self.en_passant_target:
+                    if self.last_move_turn is None or self.get_turn_count() - self.last_move_turn > 1:
+                        return  # en_passant target is not valid, do not move
                     self.board[start_pos[0], end_pos[1]] = None
 
             self.board[end_pos[0], end_pos[1]] = piece
@@ -70,17 +70,20 @@ class Board:
 
             self.last_move_start = start_pos
             self.last_move_end = end_pos
-            self.last_move_turn = self.get_turn()  
+            self.last_move_turn = self.get_turn_count()  # Update the turn count
 
             if isinstance(piece, Pawn): 
                 if abs(start_pos[0] - end_pos[0]) == 2:
                     self.en_passant_target = (start_pos[0] + (end_pos[0] - start_pos[0]) // 2, start_pos[1])
+                    self.en_passant_turn = self.get_turn_count()  # Track the turn when en_passant_target was set
                     piece.en_passant_target = True
                 else:
-                    self.en_passant_target = None
+                    piece.en_passant_target = None
 
             if isinstance(piece, Pawn): 
                 if self.en_passant_target and end_pos == self.en_passant_target:
+                    if self.get_turn_count() - self.en_passant_turn > 1:
+                        return  # en_passant target is not valid, do not move
                     self.board[start_pos[0], end_pos[1]] = None
 
             piece.has_moved = True
@@ -91,6 +94,9 @@ class Board:
 
     def get_turn(self):
         return 'white' if self.screen.get_at((0, 0)) == (255, 255, 255) else 'black'
+
+    def get_turn_count(self):
+        return pygame.time.get_ticks() // 1000  # Assuming each turn takes 1 second for simplicity
 
     def is_in_check(self, color):
         king_position = None

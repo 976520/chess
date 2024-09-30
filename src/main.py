@@ -233,7 +233,7 @@ class Game:
         for row in self.board.board:
             for piece in row:
                 if isinstance(piece, Pawn):
-                    piece.en_passant_target = False
+                    self.en_passant_target = False
 
     def is_game_over(self):
         return self.board.is_checkmate(self.current_turn) or self.board.is_stalemate(self.current_turn) or not self.king_exists(self.current_turn)

@@ -16,6 +16,107 @@ from Pieces.Queen import Queen
 from Board import Board
 from PieceImages import PieceImages
 
+
+class Menu:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((1000, 1000))
+        pygame.display.set_caption("Chess")
+        self.clock = pygame.time.Clock()
+
+        self.title_font = pygame.font.SysFont(None, 74)
+        self.title_text = self.title_font.render("chess in python", True, (255, 255, 255))
+        self.title_rect = self.title_text.get_rect(center=(self.screen.get_width() // 2, 100))
+
+        self.human_img = pygame.image.load("assets/Buttons/Human.png").convert_alpha()
+        self.computer_img = pygame.image.load("assets/Buttons/Computer.png").convert_alpha()
+        self.computer_vs_computer_img = pygame.image.load("assets/Buttons/Mirror.png").convert_alpha()
+        self.exit_img = pygame.image.load("assets/Buttons/Exit.png").convert_alpha()
+
+        self.human_img_with_bg = pygame.Surface((self.human_img.get_width() + 20, self.human_img.get_height() + 20), pygame.SRCALPHA)
+        self.human_img_with_bg.fill((255, 255, 255))
+        self.human_img_with_bg.blit(self.human_img, (10, 10))
+
+        self.computer_img_with_bg = pygame.Surface((self.computer_img.get_width() + 20, self.computer_img.get_height() + 20), pygame.SRCALPHA)
+        self.computer_img_with_bg.fill((255, 255, 255))
+        self.computer_img_with_bg.blit(self.computer_img, (10, 10))
+
+        self.mirror_img_with_bg = pygame.Surface((self.computer_vs_computer_img.get_width() + 20, self.computer_vs_computer_img.get_height() + 20), pygame.SRCALPHA)
+        self.mirror_img_with_bg.fill((255, 255, 255))
+        self.mirror_img_with_bg.blit(self.computer_vs_computer_img, (10, 10))
+
+        self.exit_img_with_bg = pygame.Surface((self.exit_img.get_width() + 20, self.exit_img.get_height() + 20), pygame.SRCALPHA)
+        self.exit_img_with_bg.fill((255, 255, 255))
+        self.exit_img_with_bg.blit(self.exit_img, (10, 10))
+
+        self.options = [self.human_img_with_bg, self.computer_img_with_bg, self.mirror_img_with_bg, self.exit_img_with_bg]
+        self.option_texts = ["human vs human", "human vs computer", "computer vs computer", "exit"]
+        self.option_rects = [pygame.Rect(100 + i * (option.get_width() + 100), 400, option.get_width(), option.get_height()) for i, option in enumerate(self.options)]
+        self.selected_option = 0
+        self.blink = True
+        self.blink_timer = 0
+
+    def run(self):
+        while True:
+            self.screen.fill((0, 0, 0))
+            self.screen.blit(self.title_text, self.title_rect)
+            for i, option in enumerate(self.options):
+                self.screen.blit(option, self.option_rects[i].topleft)
+                if i == self.selected_option and self.blink:
+                    pygame.draw.rect(self.screen, (0, 255, 0), self.option_rects[i], 5)
+                text_surface = pygame.font.SysFont(None, 26).render(self.option_texts[i], True, (255, 255, 255))
+                text_rect = text_surface.get_rect(center=(self.option_rects[i].centerx, self.option_rects[i].bottom + 30))
+                self.screen.blit(text_surface, text_rect)
+
+            pygame.display.flip()
+
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_LEFT:
+                        self.selected_option = (self.selected_option - 1) % len(self.options)
+                    elif event.key == pygame.K_RIGHT:
+                        self.selected_option = (self.selected_option + 1) % len(self.options)
+                    elif event.key == pygame.K_RETURN:
+                        if self.selected_option == 0:
+                            game = Game()
+                            game.play()
+                        elif self.selected_option == 1:
+                            game = Game(play_with_computer=True)
+                            game.play()
+                        elif self.selected_option == 2:
+                            game = Game(computer_vs_computer=True)
+                            game.play()
+                        elif self.selected_option == 3:
+                            pygame.quit()
+                            sys.exit()
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    for i, option_rect in enumerate(self.option_rects):
+                        if option_rect.collidepoint(mouse_x, mouse_y):
+                            self.selected_option = i
+                            if self.selected_option == 0:
+                                game = Game()
+                                game.play()
+                            elif self.selected_option == 1:
+                                game = Game(play_with_computer=True)
+                                game.play()
+                            elif self.selected_option == 2:
+                                game = Game(computer_vs_computer=True)
+                                game.play()
+                            elif self.selected_option == 3:
+                                pygame.quit()
+                                sys.exit()
+
+            self.blink_timer += 1
+            if self.blink_timer % 5 == 0:
+                self.blink = not self.blink
+
+            self.clock.tick(30)
+
+
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
         pygame.init()
@@ -41,13 +142,18 @@ class Game:
         self.menu_button = pygame.image.load("assets/Buttons/Menu.png").convert_alpha()
         self.menu_button = pygame.transform.scale(self.menu_button, (50, 50))
 
+        self.board_display = BoardDisplay(self.screen, self.background, self.piece_images)
+        self.timer_display = TimerDisplay(self.screen, self.turn_time_limit)
+        self.kill_log_display = KillLogDisplay(self.screen, self.piece_images)
+        self.menu_button_display = MenuButtonDisplay(self.screen, self.menu_button)
+
     def play(self):
         while not self.is_game_over():
             self.handle_events()
-            self.display_board()
-            self.display_timer()
-            self.display_menu_button()
-            self.display_kill_log()
+            self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
+            self.timer_display.display_timer(self.turn_start_time, self.current_turn, self.board)
+            self.menu_button_display.display_menu_button()
+            self.kill_log_display.display_kill_log(self.kill_log)
             pygame.display.flip()
             self.clock.tick(30)
                 
@@ -56,144 +162,9 @@ class Game:
                     self.computer_move()
                     self.turn_start_time = pygame.time.get_ticks()
 
-        self.display_board()
+        self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
         pygame.display.flip()
         self.display_game_over()
-
-    def display_board(self):
-        self.screen.fill((128, 128, 128))
-        self.screen.blit(self.background, (100, 100))  
-        colors = [(255, 255, 255), (0, 0, 0)]
-        font = pygame.font.SysFont(None, 24)
-        mouse_position = pygame.mouse.get_pos()
-        mouse_row, mouse_col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
-
-        self.draw_board(colors, font)
-        self.highlight_mouse_position(mouse_row, mouse_col)
-        self.highlight_selected_piece()
-        self.highlight_check()
-        self.highlight_last_move()
-
-    def draw_board(self, colors, font):
-        for row in range(8):
-            for col in range(8):
-                color = colors[(row + col) % 2]
-                pygame.draw.rect(self.screen, color, pygame.Rect(col * 80 + 100, row * 80 + 100, 80, 80), 1)
-                piece = self.board.board[row, col]
-                if piece:
-                    piece_image = self.piece_images[type(piece).__name__ + '_' + piece.color[0]]
-                    self.screen.blit(piece_image, (col * 80 + 100, row * 80 + 100))
-                
-                coord_text = font.render(f"{chr(97 + col)}{8 - row}", True, (0, 0, 0, 128) if color == (255, 255, 255) else (255, 255, 255, 128))
-                self.screen.blit(coord_text, (col * 80 + 105, row * 80 + 105))
-
-    def highlight_mouse_position(self, mouse_row, mouse_col):
-        if (0 <= mouse_row < 8) and (0 <= mouse_col < 8):
-            highlight_surface = pygame.Surface((80, 80), pygame.SRCALPHA)
-            highlight_surface.fill((255, 255, 255, 128))
-            self.screen.blit(highlight_surface, (mouse_col * 80 + 100, mouse_row * 80 + 100))
-
-    def highlight_selected_piece(self):
-        if self.selected_piece:
-            if (pygame.time.get_ticks() // 200) % 2 == 0:
-                pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(self.selected_position[1] * 80 + 100, self.selected_position[0] * 80 + 100, 80, 80), 3)
-            possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
-            if possible_moves:
-                for move in possible_moves:
-                    if self.board.board[move[0], move[1]] is None:
-                        pygame.draw.circle(self.screen, (0, 255, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  
-                    else:
-                        pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  
-
-    def highlight_check(self):
-        if self.board.is_in_check(self.current_turn):
-            king_position = self.find_king_position()
-            for row in range(8):
-                for col in range(8):
-                    piece = self.board.board[row, col]
-                    if piece and piece.color != self.current_turn:
-                        possible_moves = piece.get_possible_moves(self.board.board, (row, col))
-                        if possible_moves and king_position in possible_moves:
-                            pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(col * 80 + 100, row * 80 + 100, 80, 80), 3)
-
-    def highlight_last_move(self):
-        if self.board.last_move_start and self.board.last_move_end:
-            start_x = self.board.last_move_start[1] * 80 + 140
-            start_y = self.board.last_move_start[0] * 80 + 140
-            end_x = self.board.last_move_end[1] * 80 + 140
-            end_y = self.board.last_move_end[0] * 80 + 140
-            self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
-            angle = np.arctan2(end_y - start_y, end_x - start_x)
-            arrow_size = 10
-            arrow_points = [
-                (end_x, end_y),
-                (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
-                (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
-            ]
-            pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
-            
-        if self.board.computer_move_start and self.board.computer_move_end:
-            start_x = self.board.computer_move_start[1] * 80 + 140
-            start_y = self.board.computer_move_start[0] * 80 + 140
-            end_x = self.board.computer_move_end[1] * 80 + 140
-            end_y = self.board.computer_move_end[0] * 80 + 140
-            self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
-            angle = np.arctan2(end_y - start_y, end_x - start_x)
-            arrow_size = 10
-            arrow_points = [
-                (end_x, end_y),
-                (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
-                (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
-            ]
-            pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
-
-    def draw_dashed_line(self, surface, color, start_pos, end_pos, width, dash_length=10):
-        start_x, start_y = start_pos
-        end_x, end_y = end_pos
-        dash_len = dash_length
-
-        distance = ((end_x - start_x)**2 + (end_y - start_y)**2)**0.5
-        dash_num = int(distance / dash_len)
-
-        for i in range(dash_num):
-            dash_start = (start_x + (end_x - start_x) * i / dash_num, start_y + (end_y - start_y) * i / dash_num)
-            dash_end = (start_x + (end_x - start_x) * (i + 0.5) / dash_num, start_y + (end_y - start_y) * (i + 0.5) / dash_num)
-            pygame.draw.line(surface, color, dash_start, dash_end, width)
-
-    def find_king_position(self):
-        for row in range(8):
-            for col in range(8):
-                piece = self.board.board[row, col]
-                if piece and isinstance(piece, King) and piece.color == self.current_turn:
-                    return (row, col)
-        return None
-
-    def display_timer(self):
-        elapsed_time = (pygame.time.get_ticks() - self.turn_start_time) / 1000
-        remaining_time = max(0, self.turn_time_limit - elapsed_time)
-        if (remaining_time == 0):
-            self.switch_turn() 
-            self.turn_start_time = pygame.time.get_ticks() 
-
-        timer_width = int((remaining_time / self.turn_time_limit) * 640)
-        
-        if self.current_turn == 'white': 
-            if self.board.is_in_check('white'):
-                timer_color = (255, 0, 0)
-            else:
-                timer_color = (0, 0, 255)
-            pygame.draw.rect(self.screen, timer_color, pygame.Rect(100, 750, timer_width, 5)) 
-        elif self.current_turn == 'black':
-            if self.board.is_in_check('black'):
-                timer_color = (255, 0, 0)
-            else:
-                timer_color = (0, 0, 255)
-            pygame.draw.rect(self.screen, timer_color, pygame.Rect(100, 85, timer_width, 5))  
-
-        pygame.display.update()
-
-    def display_menu_button(self):
-        self.screen.blit(self.menu_button, (900, 20))
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -203,7 +174,7 @@ class Game:
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_position = pygame.mouse.get_pos()
                 if 900 <= mouse_position[0] <= 950 and 20 <= mouse_position[1] <= 70:
-                    main_menu()
+                    Menu().run()
                     return
                 row, col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
                 if self.selected_piece:
@@ -276,28 +247,7 @@ class Game:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
-                
-    def display_kill_log(self):
-        x_offset = 750
-        y_offset = 100 + (min(len(self.kill_log), 6) - 1) * 100 
-        for killer_piece, killed_piece in self.kill_log[-5:]:  
-            killer_image = self.piece_images[type(killer_piece).__name__ + '_' + killer_piece.color[0]]
-            killed_image = self.piece_images[type(killed_piece).__name__ + '_' + killed_piece.color[0]]
-            self.screen.blit(killer_image, (x_offset, y_offset))
-            start_pos = (x_offset + 80, y_offset + 40)
-            end_pos = (x_offset + 110, y_offset + 40)  
-            angle = np.arctan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
-            arrow_size = 10
-            arrow_points = [
-                (end_pos[0] + 10, end_pos[1]), 
-                (end_pos[0] - arrow_size * np.cos(angle - np.pi / 4), end_pos[1] - arrow_size * np.sin(angle - np.pi / 4)),
-                (end_pos[0] - arrow_size * np.cos(angle + np.pi / 4), end_pos[1] - arrow_size * np.sin(angle + np.pi / 4))
-            ]
-            pygame.draw.line(self.screen, (255, 0, 0), start_pos, end_pos, 5)
-            pygame.draw.polygon(self.screen, (255, 0, 0), arrow_points)
-            self.screen.blit(killed_image, (x_offset + 120, y_offset))
-            y_offset -= 100  
-    
+
     def computer_move(self):
         state = board_to_numeric(self.board.board).flatten()
 
@@ -361,8 +311,8 @@ class Game:
                 end_y = move[0] * 80 + 140
                 self.screen.fill((128, 128, 128))  
                 self.screen.blit(self.background, (100, 100))  
-                self.draw_board([(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
-                self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+                self.board_display.draw_board(self.board, [(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
+                self.board_display.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
                 angle = np.arctan2(end_y - start_y, end_x - start_x)
                 arrow_size = 10
                 arrow_points = [
@@ -398,6 +348,186 @@ class Game:
                     else:
                         score -= value
         return score
+
+class BoardDisplay:
+    def __init__(self, screen, background, piece_images):
+        self.screen = screen
+        self.background = background
+        self.piece_images = piece_images
+
+    def display_board(self, board, selected_piece, selected_position, current_turn):
+        self.screen.fill((128, 128, 128))
+        self.screen.blit(self.background, (100, 100))  
+        colors = [(255, 255, 255), (0, 0, 0)]
+        font = pygame.font.SysFont(None, 24)
+        mouse_position = pygame.mouse.get_pos()
+        mouse_row, mouse_col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
+
+        self.draw_board(board, colors, font)
+        self.highlight_mouse_position(mouse_row, mouse_col)
+        self.highlight_selected_piece(board, selected_piece, selected_position)
+        self.highlight_check(board, current_turn)
+        self.highlight_last_move(board)
+
+    def draw_board(self, board, colors, font):
+        for row in range(8):
+            for col in range(8):
+                color = colors[(row + col) % 2]
+                pygame.draw.rect(self.screen, color, pygame.Rect(col * 80 + 100, row * 80 + 100, 80, 80), 1)
+                piece = board.board[row, col]
+                if piece:
+                    piece_image = self.piece_images[type(piece).__name__ + '_' + piece.color[0]]
+                    self.screen.blit(piece_image, (col * 80 + 100, row * 80 + 100))
+                
+                coord_text = font.render(f"{chr(97 + col)}{8 - row}", True, (0, 0, 0, 128) if color == (255, 255, 255) else (255, 255, 255, 128))
+                self.screen.blit(coord_text, (col * 80 + 105, row * 80 + 105))
+
+    def highlight_mouse_position(self, mouse_row, mouse_col):
+        if (0 <= mouse_row < 8) and (0 <= mouse_col < 8):
+            highlight_surface = pygame.Surface((80, 80), pygame.SRCALPHA)
+            highlight_surface.fill((255, 255, 255, 128))
+            self.screen.blit(highlight_surface, (mouse_col * 80 + 100, mouse_row * 80 + 100))
+
+    def highlight_selected_piece(self, board, selected_piece, selected_position):
+        if selected_piece:
+            if (pygame.time.get_ticks() // 200) % 2 == 0:
+                pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(selected_position[1] * 80 + 100, selected_position[0] * 80 + 100, 80, 80), 3)
+            possible_moves = selected_piece.get_possible_moves(board.board, selected_position)
+            if possible_moves:
+                for move in possible_moves:
+                    if board.board[move[0], move[1]] is None:
+                        pygame.draw.circle(self.screen, (0, 255, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  
+                    else:
+                        pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  
+
+    def highlight_check(self, board, current_turn):
+        if board.is_in_check(current_turn):
+            king_position = self.find_king_position(board, current_turn)
+            for row in range(8):
+                for col in range(8):
+                    piece = board.board[row, col]
+                    if piece and piece.color != current_turn:
+                        possible_moves = piece.get_possible_moves(board.board, (row, col))
+                        if possible_moves and king_position in possible_moves:
+                            pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(col * 80 + 100, row * 80 + 100, 80, 80), 3)
+
+    def highlight_last_move(self, board):
+        if board.last_move_start and board.last_move_end:
+            start_x = board.last_move_start[1] * 80 + 140
+            start_y = board.last_move_start[0] * 80 + 140
+            end_x = board.last_move_end[1] * 80 + 140
+            end_y = board.last_move_end[0] * 80 + 140
+            self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+            angle = np.arctan2(end_y - start_y, end_x - start_x)
+            arrow_size = 10
+            arrow_points = [
+                (end_x, end_y),
+                (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
+                (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
+            ]
+            pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
+            
+        if board.computer_move_start and board.computer_move_end:
+            start_x = board.computer_move_start[1] * 80 + 140
+            start_y = board.computer_move_start[0] * 80 + 140
+            end_x = board.computer_move_end[1] * 80 + 140
+            end_y = board.computer_move_end[0] * 80 + 140
+            self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+            angle = np.arctan2(end_y - start_y, end_x - start_x)
+            arrow_size = 10
+            arrow_points = [
+                (end_x, end_y),
+                (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
+                (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
+            ]
+            pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
+
+    def draw_dashed_line(self, surface, color, start_pos, end_pos, width, dash_length=10):
+        start_x, start_y = start_pos
+        end_x, end_y = end_pos
+        dash_len = dash_length
+
+        distance = ((end_x - start_x)**2 + (end_y - start_y)**2)**0.5
+        dash_num = int(distance / dash_len)
+
+        for i in range(dash_num):
+            dash_start = (start_x + (end_x - start_x) * i / dash_num, start_y + (end_y - start_y) * i / dash_num)
+            dash_end = (start_x + (end_x - start_x) * (i + 0.5) / dash_num, start_y + (end_y - start_y) * (i + 0.5) / dash_num)
+            pygame.draw.line(surface, color, dash_start, dash_end, width)
+
+    def find_king_position(self, board, current_turn):
+        for row in range(8):
+            for col in range(8):
+                piece = board.board[row, col]
+                if piece and isinstance(piece, King) and piece.color == current_turn:
+                    return (row, col)
+        return None
+
+
+class TimerDisplay:
+    def __init__(self, screen, turn_time_limit):
+        self.screen = screen
+        self.turn_time_limit = turn_time_limit
+
+    def display_timer(self, turn_start_time, current_turn, board):
+        elapsed_time = (pygame.time.get_ticks() - turn_start_time) / 1000
+        remaining_time = max(0, self.turn_time_limit - elapsed_time)
+        if (remaining_time == 0):
+            self.switch_turn() 
+            turn_start_time = pygame.time.get_ticks() 
+
+        timer_width = int((remaining_time / self.turn_time_limit) * 640)
+        
+        if current_turn == 'white': 
+            if board.is_in_check('white'):
+                timer_color = (255, 0, 0)
+            else:
+                timer_color = (0, 0, 255)
+            pygame.draw.rect(self.screen, timer_color, pygame.Rect(100, 750, timer_width, 5)) 
+        elif current_turn == 'black':
+            if board.is_in_check('black'):
+                timer_color = (255, 0, 0)
+            else:
+                timer_color = (0, 0, 255)
+            pygame.draw.rect(self.screen, timer_color, pygame.Rect(100, 85, timer_width, 5))  
+
+        pygame.display.update()
+
+
+class KillLogDisplay:
+    def __init__(self, screen, piece_images):
+        self.screen = screen
+        self.piece_images = piece_images
+
+    def display_kill_log(self, kill_log):
+        x_offset = 750
+        y_offset = 100 + (min(len(kill_log), 6) - 1) * 100 
+        for killer_piece, killed_piece in kill_log[-5:]:  
+            killer_image = self.piece_images[type(killer_piece).__name__ + '_' + killer_piece.color[0]]
+            killed_image = self.piece_images[type(killed_piece).__name__ + '_' + killed_piece.color[0]]
+            self.screen.blit(killer_image, (x_offset, y_offset))
+            start_pos = (x_offset + 80, y_offset + 40)
+            end_pos = (x_offset + 110, y_offset + 40)  
+            angle = np.arctan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
+            arrow_size = 10
+            arrow_points = [
+                (end_pos[0] + 10, end_pos[1]), 
+                (end_pos[0] - arrow_size * np.cos(angle - np.pi / 4), end_pos[1] - arrow_size * np.sin(angle - np.pi / 4)),
+                (end_pos[0] - arrow_size * np.cos(angle + np.pi / 4), end_pos[1] - arrow_size * np.sin(angle + np.pi / 4))
+            ]
+            pygame.draw.line(self.screen, (255, 0, 0), start_pos, end_pos, 5)
+            pygame.draw.polygon(self.screen, (255, 0, 0), arrow_points)
+            self.screen.blit(killed_image, (x_offset + 120, y_offset))
+            y_offset -= 100  
+
+
+class MenuButtonDisplay:
+    def __init__(self, screen, menu_button):
+        self.screen = screen
+        self.menu_button = menu_button
+
+    def display_menu_button(self):
+        self.screen.blit(self.menu_button, (900, 20))
 
 
 class MCTSNode:
@@ -559,103 +689,6 @@ class ValueNetwork(nn.Module):
         return x
 
 
-def main_menu():
-    pygame.init()
-    screen = pygame.display.set_mode((1000, 1000))
-    pygame.display.set_caption("Chess Main Menu")
-    clock = pygame.time.Clock()
-
-    title_font = pygame.font.SysFont(None, 74)
-    title_text = title_font.render("chess in python", True, (255, 255, 255))
-    title_rect = title_text.get_rect(center=(screen.get_width() // 2, 100))
-
-    human_img = pygame.image.load("assets/Buttons/Human.png").convert_alpha()
-    computer_img = pygame.image.load("assets/Buttons/Computer.png").convert_alpha()
-    computer_vs_computer_img = pygame.image.load("assets/Buttons/Mirror.png").convert_alpha()
-    exit_img = pygame.image.load("assets/Buttons/Exit.png").convert_alpha()
-
-    human_img_with_bg = pygame.Surface((human_img.get_width() + 20, human_img.get_height() + 20), pygame.SRCALPHA)
-    human_img_with_bg.fill((255, 255, 255))
-    human_img_with_bg.blit(human_img, (10, 10))
-
-    computer_img_with_bg = pygame.Surface((computer_img.get_width() + 20, computer_img.get_height() + 20), pygame.SRCALPHA)
-    computer_img_with_bg.fill((255, 255, 255))
-    computer_img_with_bg.blit(computer_img, (10, 10))
-
-    mirror_img_with_bg = pygame.Surface((computer_vs_computer_img.get_width() + 20, computer_vs_computer_img.get_height() + 20), pygame.SRCALPHA)
-    mirror_img_with_bg.fill((255, 255, 255))
-    mirror_img_with_bg.blit(computer_vs_computer_img, (10, 10))
-
-    exit_img_with_bg = pygame.Surface((exit_img.get_width() + 20, exit_img.get_height() + 20), pygame.SRCALPHA)
-    exit_img_with_bg.fill((255, 255, 255))
-    exit_img_with_bg.blit(exit_img, (10, 10))
-
-    options = [human_img_with_bg, computer_img_with_bg, mirror_img_with_bg, exit_img_with_bg]
-    option_texts = ["human vs human", "human vs computer", "computer vs computer", "exit"]
-    option_rects = [pygame.Rect(100 + i * (option.get_width() + 100), 400, option.get_width(), option.get_height()) for i, option in enumerate(options)]
-    selected_option = 0
-    blink = True
-    blink_timer = 0
-
-    while True:
-        screen.fill((0, 0, 0))
-        screen.blit(title_text, title_rect)
-        for i, option in enumerate(options):
-            screen.blit(option, option_rects[i].topleft)
-            if i == selected_option and blink:
-                pygame.draw.rect(screen, (0, 255, 0), option_rects[i], 5)
-            text_surface = pygame.font.SysFont(None, 26).render(option_texts[i], True, (255, 255, 255))
-            text_rect = text_surface.get_rect(center=(option_rects[i].centerx, option_rects[i].bottom + 30))
-            screen.blit(text_surface, text_rect)
-
-        pygame.display.flip()
-
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
-            elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_LEFT:
-                    selected_option = (selected_option - 1) % len(options)
-                elif event.key == pygame.K_RIGHT:
-                    selected_option = (selected_option + 1) % len(options)
-                elif event.key == pygame.K_RETURN:
-                    if selected_option == 0:
-                        game = Game()
-                        game.play()
-                    elif selected_option == 1:
-                        game = Game(play_with_computer=True)
-                        game.play()
-                    elif selected_option == 2:
-                        game = Game(computer_vs_computer=True)
-                        game.play()
-                    elif selected_option == 3:
-                        pygame.quit()
-                        sys.exit()
-            elif event.type == pygame.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                for i, option_rect in enumerate(option_rects):
-                    if option_rect.collidepoint(mouse_x, mouse_y):
-                        selected_option = i
-                        if selected_option == 0:
-                            game = Game()
-                            game.play()
-                        elif selected_option == 1:
-                            game = Game(play_with_computer=True)
-                            game.play()
-                        elif selected_option == 2:
-                            game = Game(computer_vs_computer=True)
-                            game.play()
-                        elif selected_option == 3:
-                            pygame.quit()
-                            sys.exit()
-
-        blink_timer += 1
-        if blink_timer % 5 == 0:
-            blink = not blink
-
-        clock.tick(30)
-
 if __name__ == "__main__":
     while True:
-        main_menu()
+        Menu().run()

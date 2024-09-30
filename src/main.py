@@ -14,6 +14,7 @@ from Pieces.Knight import Knight
 from Pieces.Pawn import Pawn
 from Pieces.Queen import Queen
 from Board import Board
+from PieceImages import PieceImages
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
@@ -398,23 +399,6 @@ class Game:
                         score -= value
         return score
 
-class PieceImages:
-    @staticmethod
-    def load_images():
-        return {
-            'Pawn_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Pawn_b.png").convert_alpha(), (80, 80)),
-            'Pawn_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Pawn_w.png").convert_alpha(), (80, 80)),
-            'Rook_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Rook_b.png").convert_alpha(), (80, 80)),
-            'Rook_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Rook_w.png").convert_alpha(), (80, 80)),
-            'Knight_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Knight_b.png").convert_alpha(), (80, 80)),
-            'Knight_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Knight_w.png").convert_alpha(), (80, 80)),
-            'Bishop_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Bishop_b.png").convert_alpha(), (80, 80)),
-            'Bishop_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Bishop_w.png").convert_alpha(), (80, 80)),
-            'Queen_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Queen_b.png").convert_alpha(), (80, 80)),
-            'Queen_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Queen_w.png").convert_alpha(), (80, 80)),
-            'King_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/King_b.png").convert_alpha(), (80, 80)),
-            'King_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/King_w.png").convert_alpha(), (80, 80)),
-        }
 
 class MCTSNode:
     def __init__(self, state, parent=None, action=None):

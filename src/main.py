@@ -267,11 +267,24 @@ class Game:
         gamma = 0.99  
 
         if actions:
-            action_index, value = self.choose_action(state, actions, policy_net, value_net)
+            mcts = MCTS(policy_net, value_net)
+            root = MCTSNode(state)
+            root.expand(actions)
 
-            action = actions[action_index]
-            if action:
-                (start_row, start_col), move = action
+            for _ in range(100):  
+                node = root
+                while not node.is_leaf():
+                    node = mcts.best_child(node)
+                if node.visits > 0:
+                    node.expand(actions)
+                reward = self.evaluate_board()
+                while node is not None:
+                    node.update(reward)
+                    node = node.parent
+
+            best_action = mcts.best_action(root)
+            if best_action:
+                (start_row, start_col), move = best_action
 
                 if self.board.board[move[0], move[1]] is not None:
                     self.kill_log.append((self.board.board[start_row, start_col], self.board.board[move[0], move[1]]))
@@ -292,7 +305,7 @@ class Game:
                                 for next_move in possible_moves:
                                     next_actions.append(((row, col), next_move))
 
-                self.update_policy_and_value_net(policy_net, value_net, optimizer, state, action_index, reward, next_state, next_actions, gamma)
+                self.update_policy_and_value_net(policy_net, value_net, optimizer, state, actions.index(best_action), reward, next_state, next_actions, gamma)
 
                 self.board.move_piece((start_row, start_col), move)
                 self.switch_turn()
@@ -427,7 +440,7 @@ class MCTSNode:
             self.children.append(MCTSNode(next_state, parent=self, action=action)) 
 
     def get_next_state(self, state, action):
-        new_board = np.copy(state)
+        new_board = np.copy(state).reshape(8, 8)  
         (start_pos, end_pos) = action
         piece = new_board[start_pos[0], start_pos[1]]
         new_board[end_pos[0], end_pos[1]] = piece
@@ -460,7 +473,7 @@ class MCTS:
                 best_score = score
                 best_child_node = child_node
 
-        return best_child_node
+        return best_child_node if best_child_node is not None else node 
 
     def best_action(self, root):
         return max(root.children, key=lambda child_node: child_node.visits).action
@@ -506,6 +519,7 @@ class ValueNetwork(nn.Module):
         self.fc3 = nn.Linear(512, 1)
 
     def forward(self, x):
+        x = x.view(-1, 64)  
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
         x = self.fc3(x)

@@ -97,7 +97,8 @@ class Game:
 
     def highlight_selected_piece(self):
         if self.selected_piece:
-            pygame.draw.rect(self.screen, (0, 0, 225), pygame.Rect(self.selected_position[1] * 80 + 100, self.selected_position[0] * 80 + 100, 80, 80), 3)
+            if (pygame.time.get_ticks() // 200) % 2 == 0:
+                pygame.draw.rect(self.screen, (0, 255, 0), pygame.Rect(self.selected_position[1] * 80 + 100, self.selected_position[0] * 80 + 100, 80, 80), 3)
             possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
             if possible_moves:
                 for move in possible_moves:

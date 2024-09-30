@@ -259,8 +259,8 @@ class Game:
             title_text = font_title.render("Stalemate", True, (255, 255, 0))
             subtitle_text = None
 
-        modal_surface = pygame.Surface((400, 200))
-        modal_surface.fill((0, 0, 0))
+        modal_surface = pygame.Surface((400, 200), pygame.SRCALPHA)
+        modal_surface.fill((0, 0, 0, 128))  
         modal_surface.blit(title_text, (50, 50))
         if subtitle_text:
             modal_surface.blit(subtitle_text, (50, 120))

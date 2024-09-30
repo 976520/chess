@@ -262,8 +262,28 @@ class Game:
             start_y = self.board.last_move_start[0] * 80 + 140
             end_x = self.board.last_move_end[1] * 80 + 140
             end_y = self.board.last_move_end[0] * 80 + 140
-            pygame.draw.line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
-            pygame.draw.polygon(self.screen, (0, 0, 255), [(end_x, end_y), (end_x - 10, end_y + 10), (end_x + 10, end_y + 10)])
+            self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+            angle = np.arctan2(end_y - start_y, end_x - start_x)
+            arrow_size = 10
+            arrow_points = [
+                (end_x, end_y),
+                (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
+                (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
+            ]
+            pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
+
+    def draw_dashed_line(self, surface, color, start_pos, end_pos, width, dash_length=10):
+        x1, y1 = start_pos
+        x2, y2 = end_pos
+        dl = dash_length
+
+        distance = ((x2 - x1)**2 + (y2 - y1)**2)**0.5
+        dash_num = int(distance / dl)
+
+        for i in range(dash_num):
+            start = (x1 + (x2 - x1) * i / dash_num, y1 + (y2 - y1) * i / dash_num)
+            end = (x1 + (x2 - x1) * (i + 0.5) / dash_num, y1 + (y2 - y1) * (i + 0.5) / dash_num)
+            pygame.draw.line(surface, color, start, end, width)
 
     def find_king_position(self):
         for i in range(8):
@@ -594,6 +614,22 @@ class Game:
                     if move[0] == 0 or move[0] == 7:
                         self.board.board[move[0], move[1]].promote(self.board.board, move)
 
+                # Highlight the computer's move with a blue dot and arrow
+                start_x = j * 80 + 140
+                start_y = i * 80 + 140
+                end_x = move[1] * 80 + 140
+                end_y = move[0] * 80 + 140
+                self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+                angle = np.arctan2(end_y - start_y, end_x - start_x)
+                arrow_size = 10
+                arrow_points = [
+                    (end_x, end_y),
+                    (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
+                    (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
+                ]
+                pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
+                pygame.display.flip()
+                time.sleep(1)
 
     def evaluate_board(self):
         piece_values = {

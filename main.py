@@ -351,7 +351,12 @@ class Game:
                 self.children.append(MCTSNode(next_state, parent=self, action=action))
 
         def get_next_state(self, state, action):
-            pass
+            new_board = np.copy(state)
+            (start_pos, end_pos) = action
+            piece = new_board[start_pos[0], start_pos[1]]
+            new_board[end_pos[0], end_pos[1]] = piece
+            new_board[start_pos[0], start_pos[1]] = None
+            return new_board
 
         def update(self, reward):
             self.visits += 1

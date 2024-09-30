@@ -31,21 +31,21 @@ class Game:
         self.background = pygame.transform.scale(self.background, (640, 640))  
 
         self.piece_images = {
-            'Pawn_b': pygame.transform.scale(pygame.image.load("assets/Pawn_b.png").convert_alpha(), (80, 80)),
-            'Pawn_w': pygame.transform.scale(pygame.image.load("assets/Pawn_w.png").convert_alpha(), (80, 80)),
-            'Rook_b': pygame.transform.scale(pygame.image.load("assets/Rook_b.png").convert_alpha(), (80, 80)),
-            'Rook_w': pygame.transform.scale(pygame.image.load("assets/Rook_w.png").convert_alpha(), (80, 80)),
-            'Knight_b': pygame.transform.scale(pygame.image.load("assets/Knight_b.png").convert_alpha(), (80, 80)),
-            'Knight_w': pygame.transform.scale(pygame.image.load("assets/Knight_w.png").convert_alpha(), (80, 80)),
-            'Bishop_b': pygame.transform.scale(pygame.image.load("assets/Bishop_b.png").convert_alpha(), (80, 80)),
-            'Bishop_w': pygame.transform.scale(pygame.image.load("assets/Bishop_w.png").convert_alpha(), (80, 80)),
-            'Queen_b': pygame.transform.scale(pygame.image.load("assets/Queen_b.png").convert_alpha(), (80, 80)),
-            'Queen_w': pygame.transform.scale(pygame.image.load("assets/Queen_w.png").convert_alpha(), (80, 80)),
-            'King_b': pygame.transform.scale(pygame.image.load("assets/King_b.png").convert_alpha(), (80, 80)),
-            'King_w': pygame.transform.scale(pygame.image.load("assets/King_w.png").convert_alpha(), (80, 80)),
+            'Pawn_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Pawn_b.png").convert_alpha(), (80, 80)),
+            'Pawn_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Pawn_w.png").convert_alpha(), (80, 80)),
+            'Rook_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Rook_b.png").convert_alpha(), (80, 80)),
+            'Rook_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Rook_w.png").convert_alpha(), (80, 80)),
+            'Knight_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Knight_b.png").convert_alpha(), (80, 80)),
+            'Knight_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Knight_w.png").convert_alpha(), (80, 80)),
+            'Bishop_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Bishop_b.png").convert_alpha(), (80, 80)),
+            'Bishop_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Bishop_w.png").convert_alpha(), (80, 80)),
+            'Queen_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Queen_b.png").convert_alpha(), (80, 80)),
+            'Queen_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Queen_w.png").convert_alpha(), (80, 80)),
+            'King_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/King_b.png").convert_alpha(), (80, 80)),
+            'King_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/King_w.png").convert_alpha(), (80, 80)),
         }
 
-        self.menu_button = pygame.image.load("assets/Menu.png").convert_alpha()
+        self.menu_button = pygame.image.load("assets/Buttons/Menu.png").convert_alpha()
         self.menu_button = pygame.transform.scale(self.menu_button, (50, 50))
 
     def play(self):
@@ -545,9 +545,9 @@ def main_menu():
     pygame.display.set_caption("Chess Main Menu")
     clock = pygame.time.Clock()
 
-    human_img = pygame.image.load("assets/Human.png").convert_alpha()
-    computer_img = pygame.image.load("assets/Computer.png").convert_alpha()
-    exit_img = pygame.image.load("assets/Exit.png").convert_alpha()
+    human_img = pygame.image.load("assets/Buttons/Human.png").convert_alpha()
+    computer_img = pygame.image.load("assets/Buttons/Computer.png").convert_alpha()
+    exit_img = pygame.image.load("assets/Buttons/Exit.png").convert_alpha()
 
     human_img_with_bg = pygame.Surface((human_img.get_width() + 20, human_img.get_height() + 20), pygame.SRCALPHA)
     human_img_with_bg.fill((255, 255, 255))

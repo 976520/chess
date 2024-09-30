@@ -28,27 +28,14 @@ class Game:
         self.play_with_computer = play_with_computer
         self.computer_vs_computer = computer_vs_computer
         self.kill_log = []
-        self.replay_buffer = self.ReplayBuffer(1000000)  
+        self.replay_buffer = ReplayBuffer(1000000)  
 
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
         self.background = pygame.image.load("assets/Background.png").convert()
         self.background = pygame.transform.scale(self.background, (640, 640))  
 
-        self.piece_images = {
-            'Pawn_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Pawn_b.png").convert_alpha(), (80, 80)),
-            'Pawn_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Pawn_w.png").convert_alpha(), (80, 80)),
-            'Rook_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Rook_b.png").convert_alpha(), (80, 80)),
-            'Rook_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Rook_w.png").convert_alpha(), (80, 80)),
-            'Knight_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Knight_b.png").convert_alpha(), (80, 80)),
-            'Knight_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Knight_w.png").convert_alpha(), (80, 80)),
-            'Bishop_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Bishop_b.png").convert_alpha(), (80, 80)),
-            'Bishop_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Bishop_w.png").convert_alpha(), (80, 80)),
-            'Queen_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Queen_b.png").convert_alpha(), (80, 80)),
-            'Queen_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Queen_w.png").convert_alpha(), (80, 80)),
-            'King_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/King_b.png").convert_alpha(), (80, 80)),
-            'King_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/King_w.png").convert_alpha(), (80, 80)),
-        }
+        self.piece_images = PieceImages.load_images()
 
         self.menu_button = pygame.image.load("assets/Buttons/Menu.png").convert_alpha()
         self.menu_button = pygame.transform.scale(self.menu_button, (50, 50))
@@ -310,180 +297,7 @@ class Game:
             self.screen.blit(killed_image, (x_offset + 120, y_offset))
             y_offset -= 100  
     
-    class MCTSNode:
-        def __init__(self, state, parent=None, action=None):
-            self.state = state
-            self.parent = parent
-            self.action = action
-            self.children = []
-            self.visits = 0
-            self.value = 0.0
-
-        def is_leaf(self):
-            return len(self.children) == 0
-
-        def expand(self, actions):
-            for action in actions:
-                next_state = self.get_next_state(self.state, action)
-                self.children.append(Game.MCTSNode(next_state, parent=self, action=action)) 
-
-        def get_next_state(self, state, action):
-            new_board = np.copy(state)
-            (start_pos, end_pos) = action
-            piece = new_board[start_pos[0], start_pos[1]]
-            new_board[end_pos[0], end_pos[1]] = piece
-            new_board[start_pos[0], start_pos[1]] = None
-            return new_board
-
-        def update(self, reward):
-            self.visits += 1
-            self.value += (reward - self.value) / self.visits
-
-    def best_child(node, policy_net, value_net):
-        exploration_constant = 1.4  
-        best_score = -float('inf')
-        best_child_node = None
-        
-        state_tensor = torch.tensor(node.state, dtype=torch.float32).unsqueeze(0)
-        with torch.no_grad():
-            policy = policy_net(state_tensor).squeeze(0).numpy()
-            value = value_net(state_tensor).item()
-        
-        for i, child_node in enumerate(node.children):
-            policy_score = policy[i] if i < len(policy) else 0
-            score = child_node.value + exploration_constant * policy_score * np.sqrt(np.log(node.visits + 1) / (child_node.visits + 1))
-            if score > best_score:
-                best_score = score
-                best_child_node = child_node
-
-        return best_child_node
-
-    def best_action(root):
-        return max(root.children, key=lambda child_node: child_node.visits).action
-
-    class ReplayBuffer:
-        def __init__(self, capacity):
-            self.buffer = []
-            self.capacity = capacity
-            self.position = 0
-
-        def push(self, state, action, reward, next_state):
-            if len(self.buffer) < self.capacity:
-                self.buffer.append(None)
-            self.buffer[self.position] = (state, action, reward, next_state)
-            self.position = (self.position + 1) % self.capacity
-
-        def sample(self, batch_size):
-            return random.sample(self.buffer, batch_size)
-
-        def __len__(self):
-            return len(self.buffer)
-
-    def board_to_numeric(board):
-        numeric_board = np.zeros((8, 8), dtype=np.float32)
-        for row in range(8):
-            for col in range(8):
-                piece = board[row, col]
-                if piece is None:
-                    numeric_board[row, col] = 0
-                elif piece.color == 'black':
-                    numeric_board[row, col] = -1
-                else:
-                    numeric_board[row, col] = 1
-        return numeric_board
-
     def computer_move(self):
-        
-        def choose_action(state, actions, policy_net, value_net, epsilon=0.1):
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-            
-            with torch.no_grad():
-                policy = policy_net(state_tensor).squeeze(0).numpy()
-                value = value_net(state_tensor).item()
-
-            action_probabilities = np.zeros(len(actions))
-
-            if len(policy) == len(actions):
-                action_probabilities = np.exp(policy) / np.sum(np.exp(policy)) 
-            else:
-                for idx, action in enumerate(actions):
-                    action_probabilities[idx] = policy[idx]
-
-                if np.sum(action_probabilities) > 0:
-                    action_probabilities /= np.sum(action_probabilities)
-                else:
-                    action_probabilities = np.ones(len(actions)) / len(actions)  
-
-            if np.random.rand() < epsilon:
-                return np.random.choice(len(actions)), None  
-            else:
-                return np.random.choice(len(actions), p=action_probabilities), value 
-
-        def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
-            state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-            next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-            action_tensor = torch.tensor([action], dtype=torch.int64)
-            reward_tensor = torch.tensor([reward], dtype=torch.float32)
-
-            with torch.no_grad():
-                next_policy = policy_net(next_state_tensor).squeeze(0)
-                next_value = value_net(next_state_tensor).item()
-                next_action_probabilities = next_policy / torch.sum(next_policy)
-                next_value = torch.sum(next_action_probabilities * next_value)
-
-            policy = policy_net(state_tensor).squeeze(0)
-            value = value_net(state_tensor).item()
-            action_probability = policy[action_tensor]
-            advantage = reward_tensor + gamma * next_value - value
-            policy_loss = -torch.log(action_probability) * advantage
-            value_loss = advantage.pow(2)
-
-            optimizer.zero_grad()
-            (policy_loss + value_loss).backward()
-            optimizer.step()
-
-        class PolicyNetwork(nn.Module):
-            def __init__(self, num_actions):
-                super(PolicyNetwork, self).__init__()
-                self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
-                self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-                self.fc1 = nn.Linear(128 * 8 * 8, 512)
-                self.fc2 = nn.Linear(512, num_actions)
-
-            def forward(self, x):
-                x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
-                x = torch.relu(self.conv2(x))
-                x = x.view(-1, 128 * 8 * 8)
-                x = torch.relu(self.fc1(x))
-                return self.fc2(x)
-
-
-        class ValueNetwork(nn.Module):
-            def __init__(self):
-                super(ValueNetwork, self).__init__()
-                self.fc1 = nn.Linear(64, 512)
-                self.fc2 = nn.Linear(512, 512)
-                self.fc3 = nn.Linear(512, 1)
-
-            def forward(self, x):
-                x = torch.relu(self.fc1(x))
-                x = torch.relu(self.fc2(x))
-                x = self.fc3(x)
-                return x
-
-        def board_to_numeric(board):
-            numeric_board = np.zeros((8, 8), dtype=np.float32)
-            for row in range(8):
-                for col in range(8):
-                    piece = board[row, col]
-                    if piece is None:
-                        numeric_board[row, col] = 0
-                    elif piece.color == 'black':
-                        numeric_board[row, col] = -1
-                    else:
-                        numeric_board[row, col] = 1
-            return numeric_board
-
         state = board_to_numeric(self.board.board).flatten()
 
         actions = []
@@ -583,6 +397,182 @@ class Game:
                     else:
                         score -= value
         return score
+
+class PieceImages:
+    @staticmethod
+    def load_images():
+        return {
+            'Pawn_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Pawn_b.png").convert_alpha(), (80, 80)),
+            'Pawn_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Pawn_w.png").convert_alpha(), (80, 80)),
+            'Rook_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Rook_b.png").convert_alpha(), (80, 80)),
+            'Rook_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Rook_w.png").convert_alpha(), (80, 80)),
+            'Knight_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Knight_b.png").convert_alpha(), (80, 80)),
+            'Knight_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Knight_w.png").convert_alpha(), (80, 80)),
+            'Bishop_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Bishop_b.png").convert_alpha(), (80, 80)),
+            'Bishop_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Bishop_w.png").convert_alpha(), (80, 80)),
+            'Queen_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/Queen_b.png").convert_alpha(), (80, 80)),
+            'Queen_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/Queen_w.png").convert_alpha(), (80, 80)),
+            'King_b': pygame.transform.scale(pygame.image.load("assets/Pieces_b/King_b.png").convert_alpha(), (80, 80)),
+            'King_w': pygame.transform.scale(pygame.image.load("assets/Pieces_w/King_w.png").convert_alpha(), (80, 80)),
+        }
+
+class MCTSNode:
+    def __init__(self, state, parent=None, action=None):
+        self.state = state
+        self.parent = parent
+        self.action = action
+        self.children = []
+        self.visits = 0
+        self.value = 0.0
+
+    def is_leaf(self):
+        return len(self.children) == 0
+
+    def expand(self, actions):
+        for action in actions:
+            next_state = self.get_next_state(self.state, action)
+            self.children.append(MCTSNode(next_state, parent=self, action=action)) 
+
+    def get_next_state(self, state, action):
+        new_board = np.copy(state)
+        (start_pos, end_pos) = action
+        piece = new_board[start_pos[0], start_pos[1]]
+        new_board[end_pos[0], end_pos[1]] = piece
+        new_board[start_pos[0], start_pos[1]] = None
+        return new_board
+
+    def update(self, reward):
+        self.visits += 1
+        self.value += (reward - self.value) / self.visits
+
+def best_child(node, policy_net, value_net):
+    exploration_constant = 1.4  
+    best_score = -float('inf')
+    best_child_node = None
+    
+    state_tensor = torch.tensor(node.state, dtype=torch.float32).unsqueeze(0)
+    with torch.no_grad():
+        policy = policy_net(state_tensor).squeeze(0).numpy()
+        value = value_net(state_tensor).item()
+    
+    for i, child_node in enumerate(node.children):
+        policy_score = policy[i] if i < len(policy) else 0
+        score = child_node.value + exploration_constant * policy_score * np.sqrt(np.log(node.visits + 1) / (child_node.visits + 1))
+        if score > best_score:
+            best_score = score
+            best_child_node = child_node
+
+    return best_child_node
+
+def best_action(root):
+    return max(root.children, key=lambda child_node: child_node.visits).action
+
+class ReplayBuffer:
+    def __init__(self, capacity):
+        self.buffer = []
+        self.capacity = capacity
+        self.position = 0
+
+    def push(self, state, action, reward, next_state):
+        if len(self.buffer) < self.capacity:
+            self.buffer.append(None)
+        self.buffer[self.position] = (state, action, reward, next_state)
+        self.position = (self.position + 1) % self.capacity
+
+    def sample(self, batch_size):
+        return random.sample(self.buffer, batch_size)
+
+    def __len__(self):
+        return len(self.buffer)
+
+def board_to_numeric(board):
+    numeric_board = np.zeros((8, 8), dtype=np.float32)
+    for row in range(8):
+        for col in range(8):
+            piece = board[row, col]
+            if piece is None:
+                numeric_board[row, col] = 0
+            elif piece.color == 'black':
+                numeric_board[row, col] = -1
+            else:
+                numeric_board[row, col] = 1
+    return numeric_board
+
+def choose_action(state, actions, policy_net, value_net, epsilon=0.1):
+    state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+    
+    with torch.no_grad():
+        policy = policy_net(state_tensor).squeeze(0).numpy()
+        value = value_net(state_tensor).item()
+
+    action_probabilities = np.zeros(len(actions))
+
+    if len(policy) == len(actions):
+        action_probabilities = np.exp(policy) / np.sum(np.exp(policy)) 
+    else:
+        for idx, action in enumerate(actions):
+            action_probabilities[idx] = policy[idx]
+
+        if np.sum(action_probabilities) > 0:
+            action_probabilities /= np.sum(action_probabilities)
+        else:
+            action_probabilities = np.ones(len(actions)) / len(actions)  
+
+    if np.random.rand() < epsilon:
+        return np.random.choice(len(actions)), None  
+    else:
+        return np.random.choice(len(actions), p=action_probabilities), value 
+
+def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
+    state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+    next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
+    action_tensor = torch.tensor([action], dtype=torch.int64)
+    reward_tensor = torch.tensor([reward], dtype=torch.float32)
+
+    with torch.no_grad():
+        next_policy = policy_net(next_state_tensor).squeeze(0)
+        next_value = value_net(next_state_tensor).item()
+        next_action_probabilities = next_policy / torch.sum(next_policy)
+        next_value = torch.sum(next_action_probabilities * next_value)
+
+    policy = policy_net(state_tensor).squeeze(0)
+    value = value_net(state_tensor).item()
+    action_probability = policy[action_tensor]
+    advantage = reward_tensor + gamma * next_value - value
+    policy_loss = -torch.log(action_probability) * advantage
+    value_loss = advantage.pow(2)
+
+    optimizer.zero_grad()
+    (policy_loss + value_loss).backward()
+    optimizer.step()
+
+class PolicyNetwork(nn.Module):
+    def __init__(self, num_actions):
+        super(PolicyNetwork, self).__init__()
+        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(128 * 8 * 8, 512)
+        self.fc2 = nn.Linear(512, num_actions)
+
+    def forward(self, x):
+        x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
+        x = torch.relu(self.conv2(x))
+        x = x.view(-1, 128 * 8 * 8)
+        x = torch.relu(self.fc1(x))
+        return self.fc2(x)
+
+class ValueNetwork(nn.Module):
+    def __init__(self):
+        super(ValueNetwork, self).__init__()
+        self.fc1 = nn.Linear(64, 512)
+        self.fc2 = nn.Linear(512, 512)
+        self.fc3 = nn.Linear(512, 1)
+
+    def forward(self, x):
+        x = torch.relu(self.fc1(x))
+        x = torch.relu(self.fc2(x))
+        x = self.fc3(x)
+        return x
 
 
 

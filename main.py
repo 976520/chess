@@ -242,9 +242,9 @@ class Game:
             if possible_moves:
                 for move in possible_moves:
                     if self.board.board[move[0], move[1]] is None:
-                        pygame.draw.circle(self.screen, (0, 255, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  # Reduced size
+                        pygame.draw.circle(self.screen, (0, 255, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  
                     else:
-                        pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  # Reduced size
+                        pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  
 
     def highlight_check(self):
         if self.board.is_in_check(self.current_turn):
@@ -272,7 +272,7 @@ class Game:
                 (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
             ]
             pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
-            pygame.draw.circle(self.screen, (0, 0, 255), (start_x, start_y), 7)  # Reduced size
+            pygame.draw.circle(self.screen, (0, 0, 255), (start_x, start_y), 7)  
 
         if self.board.computer_move_start and self.board.computer_move_end:
             start_x = self.board.computer_move_start[1] * 80 + 140

@@ -548,14 +548,24 @@ class Game:
 
     def display_kill_log(self):
         x_offset = 750
-        y_offset = 100
-        for killer, killed in self.kill_log:
+        y_offset = 100 + len(self.kill_log) * 100  
+        for killer, killed in reversed(self.kill_log):  
+            y_offset -= 100  
             killer_image = self.piece_images[type(killer).__name__ + '_' + killer.color[0]]
             killed_image = self.piece_images[type(killed).__name__ + '_' + killed.color[0]]
             self.screen.blit(killer_image, (x_offset, y_offset))
-            pygame.draw.line(self.screen, (255, 0, 0), (x_offset + 80, y_offset + 40), (x_offset + 120, y_offset + 40), 5)
+            start_pos = (x_offset + 80, y_offset + 40)
+            end_pos = (x_offset + 110, y_offset + 40)  
+            angle = np.arctan2(end_pos[1] - start_pos[1], end_pos[0] - start_pos[0])
+            arrow_size = 10
+            arrow_points = [
+                (end_pos[0] + 10, end_pos[1]), 
+                (end_pos[0] - arrow_size * np.cos(angle - np.pi / 4), end_pos[1] - arrow_size * np.sin(angle - np.pi / 4)),
+                (end_pos[0] - arrow_size * np.cos(angle + np.pi / 4), end_pos[1] - arrow_size * np.sin(angle + np.pi / 4))
+            ]
+            pygame.draw.line(self.screen, (255, 0, 0), start_pos, end_pos, 5)
+            pygame.draw.polygon(self.screen, (255, 0, 0), arrow_points)
             self.screen.blit(killed_image, (x_offset + 120, y_offset))
-            y_offset += 100
 
 def main_menu():
     pygame.init()

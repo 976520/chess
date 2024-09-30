@@ -27,13 +27,15 @@ def main_menu():
     options = [human_img_with_bg, computer_img_with_bg, exit_img_with_bg]
     option_texts = ["play with human(local)", "play with computer", "exit"]
     selected_option = 0
+    blink = True
+    blink_timer = 0
 
     while True:
         screen.fill((0, 0, 0))
         for i, option in enumerate(options):
             x_position = 100 + i * (option.get_width() + 230)  
             screen.blit(option, (x_position, 400))
-            if i == selected_option:
+            if i == selected_option and blink:
                 pygame.draw.rect(screen, (0, 255, 0), (x_position, 400, option.get_width(), option.get_height()), 5)
             text_surface = pygame.font.SysFont(None, 26).render(option_texts[i], True, (255, 255, 255))
             text_rect = text_surface.get_rect(center=(x_position + option.get_width() // 2, 400 + option.get_height() + 30))
@@ -75,6 +77,11 @@ def main_menu():
                         elif selected_option == 2:
                             pygame.quit()
                             sys.exit()
+
+        blink_timer += 1
+        if blink_timer % 5 == 0:
+            blink = not blink
+
         clock.tick(30)
 
 if __name__ == "__main__":

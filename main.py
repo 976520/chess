@@ -24,6 +24,7 @@ class Game:
         self.turn_time_limit = 60
         self.turn_start_time = pygame.time.get_ticks()
         self.play_with_computer = play_with_computer
+        self.kill_log = []
 
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
@@ -54,6 +55,7 @@ class Game:
             self.display_board()
             self.display_timer()
             self.display_menu_button()
+            self.display_kill_log()
             pygame.display.flip()
             self.clock.tick(30)
                 
@@ -215,6 +217,8 @@ class Game:
                 if self.selected_piece:
                     possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
                     if possible_moves and (row, col) in possible_moves:
+                        if self.board.board[row, col] is not None:
+                            self.kill_log.append((self.selected_piece, self.board.board[row, col]))
                         self.board.move_piece(self.selected_position, (row, col))
                         self.switch_turn()
                         self.turn_start_time = pygame.time.get_ticks()
@@ -228,7 +232,11 @@ class Game:
                             self.selected_position = (row, col)
 
     def switch_turn(self):
-        self.current_turn = 'black' if self.current_turn == 'white' else 'white' 
+        if self.current_turn == 'white':
+            self.current_turn = 'black'
+        elif self.current_turn == 'black':
+            self.current_turn = 'white'
+            
         pygame.display.set_caption(f"{self.current_turn.capitalize()} turn")
 
         for row in self.board.board:
@@ -538,6 +546,16 @@ class Game:
                         score -= value
         return score
 
+    def display_kill_log(self):
+        x_offset = 750
+        y_offset = 100
+        for killer, killed in self.kill_log:
+            killer_image = self.piece_images[type(killer).__name__ + '_' + killer.color[0]]
+            killed_image = self.piece_images[type(killed).__name__ + '_' + killed.color[0]]
+            self.screen.blit(killer_image, (x_offset, y_offset))
+            pygame.draw.line(self.screen, (255, 0, 0), (x_offset + 80, y_offset + 40), (x_offset + 120, y_offset + 40), 5)
+            self.screen.blit(killed_image, (x_offset + 120, y_offset))
+            y_offset += 100
 
 def main_menu():
     pygame.init()

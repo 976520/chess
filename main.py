@@ -18,6 +18,8 @@ class Board:
         self.board = self.initialize_board()
         self.en_passant_target = None
         self.screen = screen
+        self.last_move_start = None
+        self.last_move_end = None
 
     def initialize_board(self):
         board = np.full((8, 8), None)
@@ -62,6 +64,9 @@ class Board:
 
             self.board[end_pos[0], end_pos[1]] = piece
             self.board[start_pos[0], start_pos[1]] = None
+
+            self.last_move_start = start_pos
+            self.last_move_end = end_pos
 
             if isinstance(piece, Pawn):
                 if abs(start_pos[0] - end_pos[0]) == 2:
@@ -203,6 +208,7 @@ class Game:
         self.highlight_mouse_position(mouse_row, mouse_col)
         self.highlight_selected_piece()
         self.highlight_check()
+        self.highlight_last_move()
 
     def draw_board(self, colors, font):
         for row in range(8):
@@ -244,6 +250,11 @@ class Game:
                         possible_moves = piece.get_possible_moves(self.board.board, (i, j))
                         if possible_moves and king_position in possible_moves:
                             pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(j * 80 + 100, i * 80 + 100, 80, 80), 3)
+
+    def highlight_last_move(self):
+        if self.board.last_move_start and self.board.last_move_end:
+            pygame.draw.rect(self.screen, (0, 0, 255), pygame.Rect(self.board.last_move_start[1] * 80 + 100, self.board.last_move_start[0] * 80 + 100, 80, 80), 3)
+            pygame.draw.rect(self.screen, (0, 0, 255), pygame.Rect(self.board.last_move_end[1] * 80 + 100, self.board.last_move_end[0] * 80 + 100, 80, 80), 3)
 
     def find_king_position(self):
         for i in range(8):

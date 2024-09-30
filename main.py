@@ -422,29 +422,6 @@ class Game:
                     numeric_board[i, j] = 1
         return numeric_board
 
-    def update_policy_and_value_net(policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
-        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
-        next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-        action_tensor = torch.tensor([action], dtype=torch.int64)
-        reward_tensor = torch.tensor([reward], dtype=torch.float32)
-
-        with torch.no_grad():
-            next_policy = policy_net(next_state_tensor).squeeze(0)
-            next_value = value_net(next_state_tensor).item()
-            next_action_probs = next_policy / torch.sum(next_policy)
-            next_value = torch.sum(next_action_probs * next_value)
-
-        policy = policy_net(state_tensor).squeeze(0)
-        value = value_net(state_tensor).item()
-        action_prob = policy[action_tensor]
-        advantage = reward_tensor + gamma * next_value - value
-        policy_loss = -torch.log(action_prob) * advantage
-        value_loss = advantage.pow(2)
-
-        optimizer.zero_grad()
-        (policy_loss + value_loss).backward()
-        optimizer.step()
-
     def computer_move(self):
         
         def choose_action(state, actions, policy_net, value_net, epsilon=0.1):

@@ -44,12 +44,13 @@ class Board:
         piece = self.board[start_pos[0], start_pos[1]]
         if piece:
             possible_moves = piece.get_possible_moves(self.board, start_pos)
-            if possible_moves and end_pos in possible_moves:
-                target_piece = self.board[end_pos[0], end_pos[1]]
-                if isinstance(target_piece, King):
-                    print(f"{piece.color.capitalize()} wins")
-                    pygame.quit()
-                    sys.exit()
+            if possible_moves: 
+                if end_pos in possible_moves:
+                    target_piece = self.board[end_pos[0], end_pos[1]]
+                    if isinstance(target_piece, King):
+                        print(f"{piece.color.capitalize()} wins")
+                        pygame.quit()
+                        sys.exit()
 
             if isinstance(piece, King):
                 if abs(start_pos[1] - end_pos[1]) == 2:
@@ -78,8 +79,9 @@ class Board:
                 else:
                     self.en_passant_target = None
 
-            if isinstance(piece, Pawn) and self.en_passant_target and end_pos == self.en_passant_target:
-                self.board[start_pos[0], end_pos[1]] = None
+            if isinstance(piece, Pawn): 
+                if self.en_passant_target and end_pos == self.en_passant_target:
+                    self.board[start_pos[0], end_pos[1]] = None
 
             piece.has_moved = True
                 
@@ -106,10 +108,12 @@ class Board:
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
-                if piece and piece.color != color:
-                    possible_moves = piece.get_possible_moves(self.board, (i, j))
-                    if possible_moves and king_position in possible_moves:
-                        return True
+                if piece:
+                    if piece.color != color:
+                        possible_moves = piece.get_possible_moves(self.board, (i, j))
+                        if possible_moves:
+                            if king_position in possible_moves:
+                                return True
         return False
 
     def is_checkmate(self, color):
@@ -119,19 +123,20 @@ class Board:
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
-                if piece and piece.color == color:
-                    possible_moves = piece.get_possible_moves(self.board, (i, j))
-                    if possible_moves:
-                        for move in possible_moves:
-                            original_piece = self.board[move[0], move[1]]
-                            self.board[move[0], move[1]] = piece
-                            self.board[i, j] = None
-                            if not self.is_in_check(color):
+                if piece: 
+                    if piece.color == color:
+                        possible_moves = piece.get_possible_moves(self.board, (i, j))
+                        if possible_moves:
+                            for move in possible_moves:
+                                original_piece = self.board[move[0], move[1]]
+                                self.board[move[0], move[1]] = piece
+                                self.board[i, j] = None
+                                if not self.is_in_check(color):
+                                    self.board[i, j] = piece
+                                    self.board[move[0], move[1]] = original_piece
+                                    return False
                                 self.board[i, j] = piece
                                 self.board[move[0], move[1]] = original_piece
-                                return False
-                            self.board[i, j] = piece
-                            self.board[move[0], move[1]] = original_piece
         return True
 
     def is_stalemate(self, color):
@@ -141,17 +146,18 @@ class Board:
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
-                if piece and piece.color == color:
-                    possible_moves = piece.get_possible_moves(self.board, (i, j))
-                    if possible_moves:
-                        for move in possible_moves:
-                            original_piece = self.board[move[0], move[1]]
-                            self.board[move[0], move[1]] = piece
-                            self.board[i, j] = None
-                            if not self.is_in_check(color):
+                if piece: 
+                    if piece.color == color:
+                        possible_moves = piece.get_possible_moves(self.board, (i, j))
+                        if possible_moves:
+                            for move in possible_moves:
+                                original_piece = self.board[move[0], move[1]]
+                                self.board[move[0], move[1]] = piece
+                                self.board[i, j] = None
+                                if not self.is_in_check(color):
+                                    self.board[i, j] = piece
+                                    self.board[move[0], move[1]] = original_piece
+                                    return False
                                 self.board[i, j] = piece
                                 self.board[move[0], move[1]] = original_piece
-                                return False
-                            self.board[i, j] = piece
-                            self.board[move[0], move[1]] = original_piece
         return True

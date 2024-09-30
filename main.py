@@ -7,16 +7,37 @@ def main_menu():
     screen = pygame.display.set_mode((1000, 1000))
     pygame.display.set_caption("Chess Main Menu")
     clock = pygame.time.Clock()
-    font = pygame.font.SysFont(None, 74)
-    options = ["1. play with human (local)", "2. play with computer", "3. exit"]
+
+    human_img = pygame.image.load("assets/Human.png").convert_alpha()
+    computer_img = pygame.image.load("assets/Computer.png").convert_alpha()
+    exit_img = pygame.image.load("assets/Exit.png").convert_alpha()
+
+    human_img_with_bg = pygame.Surface(human_img.get_size(), pygame.SRCALPHA)
+    human_img_with_bg.fill((255, 255, 255))
+    human_img_with_bg.blit(human_img, (0, 0))
+
+    computer_img_with_bg = pygame.Surface(computer_img.get_size(), pygame.SRCALPHA)
+    computer_img_with_bg.fill((255, 255, 255))
+    computer_img_with_bg.blit(computer_img, (0, 0))
+
+    exit_img_with_bg = pygame.Surface(exit_img.get_size(), pygame.SRCALPHA)
+    exit_img_with_bg.fill((255, 255, 255))
+    exit_img_with_bg.blit(exit_img, (0, 0))
+
+    options = [human_img_with_bg, computer_img_with_bg, exit_img_with_bg]
+    option_texts = ["play with human(local)", "play with computer", "exit"]
     selected_option = 0
 
     while True:
         screen.fill((0, 0, 0))
         for i, option in enumerate(options):
-            color = (255, 0, 0) if i == selected_option else (255, 255, 255)
-            text = font.render(option, True, color)
-            screen.blit(text, (100, 200 + i * 100))
+            x_position = 100 + i * (option.get_width() + 250)  
+            screen.blit(option, (x_position, 400))
+            if i == selected_option:
+                pygame.draw.rect(screen, (0, 255, 0), (x_position, 400, option.get_width(), option.get_height()), 5)
+            text_surface = pygame.font.SysFont(None, 26).render(option_texts[i], True, (255, 255, 255))
+            text_rect = text_surface.get_rect(center=(x_position + option.get_width() // 2, 400 + option.get_height() + 30))
+            screen.blit(text_surface, text_rect)
 
         pygame.display.flip()
 
@@ -25,9 +46,9 @@ def main_menu():
                 pygame.quit()
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_UP:
+                if event.key == pygame.K_LEFT:
                     selected_option = (selected_option - 1) % len(options)
-                elif event.key == pygame.K_DOWN:
+                elif event.key == pygame.K_RIGHT:
                     selected_option = (selected_option + 1) % len(options)
                 elif event.key == pygame.K_RETURN:
                     if selected_option == 0:
@@ -42,7 +63,7 @@ def main_menu():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
                 for i, option in enumerate(options):
-                    option_rect = pygame.Rect(100, 200 + i * 100, 800, 74)
+                    option_rect = pygame.Rect(100 + i * (option.get_width() + 300), 400, option.get_width(), option.get_height())  # Maximized the gap between buttons
                     if option_rect.collidepoint(mouse_x, mouse_y):
                         selected_option = i
                         if selected_option == 0:

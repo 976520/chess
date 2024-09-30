@@ -185,6 +185,7 @@ class Game:
             if self.current_turn == 'black':
                 if self.play_with_computer:
                     self.computer_move()
+                    self.turn_start_time = pygame.time.get_ticks()
 
         self.display_board()
         pygame.display.flip()

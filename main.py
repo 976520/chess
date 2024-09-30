@@ -21,6 +21,8 @@ class Board:
         self.last_move_start = None
         self.last_move_end = None
         self.last_move_turn = None  
+        self.computer_move_start = None
+        self.computer_move_end = None
 
     def initialize_board(self):
         board = np.full((8, 8), None)
@@ -241,9 +243,9 @@ class Game:
             if possible_moves:
                 for move in possible_moves:
                     if self.board.board[move[0], move[1]] is None:
-                        pygame.draw.circle(self.screen, (0, 255, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 10)
+                        pygame.draw.circle(self.screen, (0, 255, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  # Reduced size
                     else:
-                        pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 10)
+                        pygame.draw.circle(self.screen, (255, 0, 0), (move[1] * 80 + 140, move[0] * 80 + 140), 7)  # Reduced size
 
     def highlight_check(self):
         if self.board.is_in_check(self.current_turn):
@@ -262,6 +264,22 @@ class Game:
             start_y = self.board.last_move_start[0] * 80 + 140
             end_x = self.board.last_move_end[1] * 80 + 140
             end_y = self.board.last_move_end[0] * 80 + 140
+            self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+            angle = np.arctan2(end_y - start_y, end_x - start_x)
+            arrow_size = 10
+            arrow_points = [
+                (end_x, end_y),
+                (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
+                (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
+            ]
+            pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
+            pygame.draw.circle(self.screen, (0, 0, 255), (start_x, start_y), 7)  # Reduced size
+
+        if self.board.computer_move_start and self.board.computer_move_end:
+            start_x = self.board.computer_move_start[1] * 80 + 140
+            start_y = self.board.computer_move_start[0] * 80 + 140
+            end_x = self.board.computer_move_end[1] * 80 + 140
+            end_y = self.board.computer_move_end[0] * 80 + 140
             self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
             angle = np.arctan2(end_y - start_y, end_x - start_x)
             arrow_size = 10
@@ -296,7 +314,7 @@ class Game:
     def display_timer(self):
         elapsed_time = (pygame.time.get_ticks() - self.turn_start_time) / 1000
         remaining_time = max(0, self.turn_time_limit - elapsed_time)
-        if remaining_time == 0:
+        if (remaining_time == 0):
             self.switch_turn() 
             self.turn_start_time = pygame.time.get_ticks() 
 
@@ -614,7 +632,8 @@ class Game:
                     if move[0] == 0 or move[0] == 7:
                         self.board.board[move[0], move[1]].promote(self.board.board, move)
 
-                # Highlight the computer's move with a blue dot and arrow
+                self.board.computer_move_start = (i, j)
+                self.board.computer_move_end = move
                 start_x = j * 80 + 140
                 start_y = i * 80 + 140
                 end_x = move[1] * 80 + 140

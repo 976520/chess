@@ -256,17 +256,24 @@ class Game:
         return False
 
     def display_game_over(self):
-        font = pygame.font.SysFont(None, 74)
+        font_title = pygame.font.SysFont(None, 74)
+        font_subtitle = pygame.font.SysFont(None, 50)
+        
         if self.board.is_checkmate(self.current_turn):
-            text = font.render(f"Checkmate, {self.current_turn} loses.", True, (255, 0, 0))
+            title_text = font_title.render(f"{self.current_turn.capitalize()} loses", True, (255, 0, 0))
+            subtitle_text = font_subtitle.render("Checkmate", True, (255, 255, 255))
         elif not self.king_exists(self.current_turn):
-            text = font.render(f"{self.current_turn.capitalize()} King is captured.", True, (255, 0, 0))
+            title_text = font_title.render(f"{self.current_turn.capitalize()} loses", True, (255, 0, 0))
+            subtitle_text = font_subtitle.render("King captured", True, (255, 255, 255))
         else:
-            text = font.render("Stalemate", True, (255, 255, 0))
+            title_text = font_title.render("Stalemate", True, (255, 255, 0))
+            subtitle_text = None
 
         modal_surface = pygame.Surface((400, 200))
         modal_surface.fill((0, 0, 0))
-        modal_surface.blit(text, (50, 80))
+        modal_surface.blit(title_text, (50, 50))
+        if subtitle_text:
+            modal_surface.blit(subtitle_text, (50, 120))
 
         self.screen.blit(modal_surface, (300, 400))
         pygame.display.flip()
@@ -596,16 +603,17 @@ def main_menu():
     computer_img_with_bg.fill((255, 255, 255))
     computer_img_with_bg.blit(computer_img, (10, 10))
 
-    computer_vs_computer_img_with_bg = pygame.Surface((computer_vs_computer_img.get_width() + 20, computer_vs_computer_img.get_height() + 20), pygame.SRCALPHA)
-    computer_vs_computer_img_with_bg.fill((255, 255, 255))
-    computer_vs_computer_img_with_bg.blit(computer_vs_computer_img, (10, 10))
+    mirror_img_with_bg = pygame.Surface((computer_vs_computer_img.get_width() + 20, computer_vs_computer_img.get_height() + 20), pygame.SRCALPHA)
+    mirror_img_with_bg.fill((255, 255, 255))
+    mirror_img_with_bg.blit(computer_vs_computer_img, (10, 10))
 
     exit_img_with_bg = pygame.Surface((exit_img.get_width() + 20, exit_img.get_height() + 20), pygame.SRCALPHA)
     exit_img_with_bg.fill((255, 255, 255))
     exit_img_with_bg.blit(exit_img, (10, 10))
 
-    options = [human_img_with_bg, computer_img_with_bg, computer_vs_computer_img_with_bg, exit_img_with_bg]
+    options = [human_img_with_bg, computer_img_with_bg, mirror_img_with_bg, exit_img_with_bg]
     option_texts = ["human vs human", "human vs computer", "computer vs computer", "exit"]
+    option_rects = [pygame.Rect(100 + i * (option.get_width() + 100), 400, option.get_width(), option.get_height()) for i, option in enumerate(options)]
     selected_option = 0
     blink = True
     blink_timer = 0
@@ -613,12 +621,11 @@ def main_menu():
     while True:
         screen.fill((0, 0, 0))
         for i, option in enumerate(options):
-            x_position = 100 + i * (option.get_width() + 100)  
-            screen.blit(option, (x_position, 400))
+            screen.blit(option, option_rects[i].topleft)
             if i == selected_option and blink:
-                pygame.draw.rect(screen, (0, 255, 0), (x_position, 400, option.get_width(), option.get_height()), 5)
+                pygame.draw.rect(screen, (0, 255, 0), option_rects[i], 5)
             text_surface = pygame.font.SysFont(None, 26).render(option_texts[i], True, (255, 255, 255))
-            text_rect = text_surface.get_rect(center=(x_position + option.get_width() // 2, 400 + option.get_height() + 30))
+            text_rect = text_surface.get_rect(center=(option_rects[i].centerx, option_rects[i].bottom + 30))
             screen.blit(text_surface, text_rect)
 
         pygame.display.flip()
@@ -647,8 +654,7 @@ def main_menu():
                         sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = pygame.mouse.get_pos()
-                for i, option in enumerate(options):
-                    option_rect = pygame.Rect(100 + i * (option.get_width() + 300), 400, option.get_width(), option.get_height()) 
+                for i, option_rect in enumerate(option_rects):
                     if option_rect.collidepoint(mouse_x, mouse_y):
                         selected_option = i
                         if selected_option == 0:

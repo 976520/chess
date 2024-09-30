@@ -14,7 +14,7 @@ from Pieces.Queen import Queen
 from Board import Board
 
 class Game:
-    def __init__(self, play_with_computer=False):
+    def __init__(self, play_with_computer=False, computer_vs_computer=False):
         pygame.init()
         self.screen = pygame.display.set_mode((1000, 1000))
         self.board = Board(self.screen)
@@ -24,6 +24,7 @@ class Game:
         self.turn_time_limit = 60
         self.turn_start_time = pygame.time.get_ticks()
         self.play_with_computer = play_with_computer
+        self.computer_vs_computer = computer_vs_computer
         self.kill_log = []
 
         pygame.display.set_caption("White turn")
@@ -59,8 +60,8 @@ class Game:
             pygame.display.flip()
             self.clock.tick(30)
                 
-            if self.current_turn == 'black':
-                if self.play_with_computer:
+            if self.current_turn == 'black' or self.computer_vs_computer:
+                if self.play_with_computer or self.computer_vs_computer:
                     self.computer_move()
                     self.turn_start_time = pygame.time.get_ticks()
 
@@ -461,7 +462,7 @@ class Game:
         for i in range(8):
             for j in range(8):
                 piece = self.board.board[i, j]
-                if piece and piece.color == 'black':
+                if piece and piece.color == self.current_turn:
                     possible_moves = piece.get_possible_moves(self.board.board, (i, j))
                     if possible_moves:
                         for move in possible_moves:
@@ -491,7 +492,7 @@ class Game:
                 for x in range(8):
                     for y in range(8):
                         piece = self.board.board[x, y]
-                        if piece and piece.color == 'black':
+                        if piece and piece.color == self.current_turn:
                             possible_moves = piece.get_possible_moves(self.board.board, (x, y))
                             if possible_moves:
                                 for next_move in possible_moves:
@@ -575,6 +576,7 @@ def main_menu():
 
     human_img = pygame.image.load("assets/Buttons/Human.png").convert_alpha()
     computer_img = pygame.image.load("assets/Buttons/Computer.png").convert_alpha()
+    computer_vs_computer_img = pygame.image.load("assets/Buttons/Mirror.png").convert_alpha()
     exit_img = pygame.image.load("assets/Buttons/Exit.png").convert_alpha()
 
     human_img_with_bg = pygame.Surface((human_img.get_width() + 20, human_img.get_height() + 20), pygame.SRCALPHA)
@@ -585,12 +587,16 @@ def main_menu():
     computer_img_with_bg.fill((255, 255, 255))
     computer_img_with_bg.blit(computer_img, (10, 10))
 
+    computer_vs_computer_img_with_bg = pygame.Surface((computer_vs_computer_img.get_width() + 20, computer_vs_computer_img.get_height() + 20), pygame.SRCALPHA)
+    computer_vs_computer_img_with_bg.fill((255, 255, 255))
+    computer_vs_computer_img_with_bg.blit(computer_vs_computer_img, (10, 10))
+
     exit_img_with_bg = pygame.Surface((exit_img.get_width() + 20, exit_img.get_height() + 20), pygame.SRCALPHA)
     exit_img_with_bg.fill((255, 255, 255))
     exit_img_with_bg.blit(exit_img, (10, 10))
 
-    options = [human_img_with_bg, computer_img_with_bg, exit_img_with_bg]
-    option_texts = ["play with human(local)", "play with computer", "exit"]
+    options = [human_img_with_bg, computer_img_with_bg, computer_vs_computer_img_with_bg, exit_img_with_bg]
+    option_texts = ["play with human(local)", "play with computer", "computer vs computer", "exit"]
     selected_option = 0
     blink = True
     blink_timer = 0
@@ -598,7 +604,7 @@ def main_menu():
     while True:
         screen.fill((0, 0, 0))
         for i, option in enumerate(options):
-            x_position = 100 + i * (option.get_width() + 230)  
+            x_position = 100 + i * (option.get_width() + 100)  
             screen.blit(option, (x_position, 400))
             if i == selected_option and blink:
                 pygame.draw.rect(screen, (0, 255, 0), (x_position, 400, option.get_width(), option.get_height()), 5)
@@ -625,6 +631,9 @@ def main_menu():
                         game = Game(play_with_computer=True)
                         game.play()
                     elif selected_option == 2:
+                        game = Game(computer_vs_computer=True)
+                        game.play()
+                    elif selected_option == 3:
                         pygame.quit()
                         sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -640,6 +649,9 @@ def main_menu():
                             game = Game(play_with_computer=True)
                             game.play()
                         elif selected_option == 2:
+                            game = Game(computer_vs_computer=True)
+                            game.play()
+                        elif selected_option == 3:
                             pygame.quit()
                             sys.exit()
 

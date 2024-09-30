@@ -246,12 +246,21 @@ class Game:
                     piece.en_passant_target = False
 
     def is_game_over(self):
-        return self.board.is_checkmate(self.current_turn) or self.board.is_stalemate(self.current_turn)
+        return self.board.is_checkmate(self.current_turn) or self.board.is_stalemate(self.current_turn) or not self.king_exists(self.current_turn)
+
+    def king_exists(self, color):
+        for row in self.board.board:
+            for piece in row:
+                if isinstance(piece, King) and piece.color == color:
+                    return True
+        return False
 
     def display_game_over(self):
         font = pygame.font.SysFont(None, 74)
         if self.board.is_checkmate(self.current_turn):
             text = font.render(f"Checkmate, {self.current_turn} loses.", True, (255, 0, 0))
+        elif not self.king_exists(self.current_turn):
+            text = font.render(f"{self.current_turn.capitalize()} King is captured.", True, (255, 0, 0))
         else:
             text = font.render("Stalemate", True, (255, 255, 0))
 
@@ -596,7 +605,7 @@ def main_menu():
     exit_img_with_bg.blit(exit_img, (10, 10))
 
     options = [human_img_with_bg, computer_img_with_bg, computer_vs_computer_img_with_bg, exit_img_with_bg]
-    option_texts = ["play with human(local)", "play with computer", "computer vs computer", "exit"]
+    option_texts = ["human vs human", "human vs computer", "computer vs computer", "exit"]
     selected_option = 0
     blink = True
     blink_timer = 0

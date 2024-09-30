@@ -41,15 +41,15 @@ class Pawn(Piece):
                 if target_piece is not None:
                     if target_piece.color != self.color:
                         moves.append(tuple(new_pos))
-
+    
         for d in [-1, 1]:
             new_pos = position + np.array([0, d])
             if 0 <= new_pos[1] < 8:
                 if isinstance(board[position[0], new_pos[1]], Pawn):
-                    if board[position[0], new_pos[1]].color != self.color: 
-                        if board[position[0], new_pos[1]].en_passant_target:
+                    if board[position[0], new_pos[1]].color != self.color:
                             if (self.color == 'white' and position[0] == 3) or (self.color == 'black' and position[0] == 4):
                                 moves.append((position[0] + direction, new_pos[1]))
+                            
 
         return moves
 

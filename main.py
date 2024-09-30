@@ -71,12 +71,20 @@ class Board:
             self.last_move_end = end_pos
             self.last_move_turn = self.get_turn()  
 
-            if isinstance(piece, Pawn):
+            if isinstance(piece, Pawn): # piece = 두 칸 이동한 애
+                # 폰이 두 칸을 이동했는지 확인
                 if abs(start_pos[0] - end_pos[0]) == 2:
+                    # 앙파상으로 잡을 수 있는 애 설정, self = 지금 턴을 가진 애
                     self.en_passant_target = (start_pos[0] + (end_pos[0] - start_pos[0]) // 2, start_pos[1])
+                    # 현재 폰을 앙파상으로 잡을 수 있는 애로 설정
                     piece.en_passant_target = True
                 else:
+                    # 두 칸 이동이 아니면 앙파상으로 잡을 수 있는 애 아님
                     self.en_passant_target = None
+
+            # 앙파상으로 잡힌 폰을 제거
+            if isinstance(piece, Pawn) and self.en_passant_target and end_pos == self.en_passant_target:
+                self.board[start_pos[0], end_pos[1]] = None
 
             piece.has_moved = True
                 

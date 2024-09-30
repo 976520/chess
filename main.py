@@ -603,8 +603,6 @@ class Game:
             if action:
                 (i, j), move = action
 
-                delay = np.random.uniform(0.5, 2.0)
-                time.sleep(delay)
 
                 self.board.board[move[0], move[1]] = self.board.board[i, j]
                 self.board.board[i, j] = None
@@ -638,6 +636,9 @@ class Game:
                 start_y = i * 80 + 140
                 end_x = move[1] * 80 + 140
                 end_y = move[0] * 80 + 140
+                self.screen.fill((128, 128, 128))  
+                self.screen.blit(self.background, (100, 100))  
+                self.draw_board([(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
                 self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
                 angle = np.arctan2(end_y - start_y, end_x - start_x)
                 arrow_size = 10
@@ -648,8 +649,6 @@ class Game:
                 ]
                 pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
                 pygame.display.flip()
-                time.sleep(1)
-
     def evaluate_board(self):
         piece_values = {
             King: 1000,

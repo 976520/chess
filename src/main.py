@@ -575,12 +575,15 @@ class ValueNetwork(nn.Module):
         return x
 
 
-
 def main_menu():
     pygame.init()
     screen = pygame.display.set_mode((1000, 1000))
     pygame.display.set_caption("Chess Main Menu")
     clock = pygame.time.Clock()
+
+    title_font = pygame.font.SysFont(None, 74)
+    title_text = title_font.render("chess in python", True, (255, 255, 255))
+    title_rect = title_text.get_rect(center=(screen.get_width() // 2, 100))
 
     human_img = pygame.image.load("assets/Buttons/Human.png").convert_alpha()
     computer_img = pygame.image.load("assets/Buttons/Computer.png").convert_alpha()
@@ -612,6 +615,7 @@ def main_menu():
 
     while True:
         screen.fill((0, 0, 0))
+        screen.blit(title_text, title_rect)
         for i, option in enumerate(options):
             screen.blit(option, option_rects[i].topleft)
             if i == selected_option and blink:

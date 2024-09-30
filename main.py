@@ -548,8 +548,8 @@ class Game:
 
     def display_kill_log(self):
         x_offset = 750
-        y_offset = 100 + (len(self.kill_log) - 1) * 100 
-        for killer, killed in (self.kill_log):  
+        y_offset = 100 + (min(len(self.kill_log), 6) - 1) * 100 
+        for killer, killed in self.kill_log[-5:]:  
             killer_image = self.piece_images[type(killer).__name__ + '_' + killer.color[0]]
             killed_image = self.piece_images[type(killed).__name__ + '_' + killed.color[0]]
             self.screen.blit(killer_image, (x_offset, y_offset))

@@ -20,6 +20,7 @@ class Board:
         self.screen = screen
         self.last_move_start = None
         self.last_move_end = None
+        self.last_move_turn = None  
 
     def initialize_board(self):
         board = np.full((8, 8), None)
@@ -67,6 +68,7 @@ class Board:
 
             self.last_move_start = start_pos
             self.last_move_end = end_pos
+            self.last_move_turn = self.get_turn()  
 
             if isinstance(piece, Pawn):
                 if abs(start_pos[0] - end_pos[0]) == 2:
@@ -80,6 +82,9 @@ class Board:
             if isinstance(piece, Pawn):
                 if end_pos[0] == 0 or end_pos[0] == 7:
                     piece.promote(self.board, end_pos)
+
+    def get_turn(self):
+        return 'white' if self.screen.get_at((0, 0)) == (255, 255, 255) else 'black'
 
     def is_in_check(self, color):
         king_position = None
@@ -253,8 +258,12 @@ class Game:
 
     def highlight_last_move(self):
         if self.board.last_move_start and self.board.last_move_end:
-            pygame.draw.rect(self.screen, (0, 0, 255), pygame.Rect(self.board.last_move_start[1] * 80 + 100, self.board.last_move_start[0] * 80 + 100, 80, 80), 3)
-            pygame.draw.rect(self.screen, (0, 0, 255), pygame.Rect(self.board.last_move_end[1] * 80 + 100, self.board.last_move_end[0] * 80 + 100, 80, 80), 3)
+            start_x = self.board.last_move_start[1] * 80 + 140
+            start_y = self.board.last_move_start[0] * 80 + 140
+            end_x = self.board.last_move_end[1] * 80 + 140
+            end_y = self.board.last_move_end[0] * 80 + 140
+            pygame.draw.line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+            pygame.draw.polygon(self.screen, (0, 0, 255), [(end_x, end_y), (end_x - 10, end_y + 10), (end_x + 10, end_y + 10)])
 
     def find_king_position(self):
         for i in range(8):

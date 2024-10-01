@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 import random
 import pickle
-
+import concurrent.futures
 from Pieces.King import King
 from Pieces.Rook import Rook
 from Pieces.Bishop import Bishop
@@ -263,24 +263,30 @@ class Game:
         num_actions = len(actions)
         policy_net = PolicyNetwork(num_actions)
         value_net = ValueNetwork()
-        optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.000001)
+        optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99  
+        simulation_count = 3
 
         if actions:
             mcts = MCTS(policy_net, value_net)
             root = MCTSNode(state)
             root.expand(actions)
 
-            for _ in range(3): # 하 ...
-                node = root
-                while not node.is_leaf():
-                    node = mcts.best_child(node)
-                if node.visits > 0: 
-                    node.expand(actions) # action으로 node 확장 
-                reward = self.evaluate_board()
-                while node is not None: # 역전파
-                    node.update(reward)
-                    node = node.parent
+            def run_simulation(root, actions):
+                for _ in range(simulation_count): 
+                    node = root
+                    while not node.is_leaf():
+                        node = mcts.best_child(node)
+                    if node.visits > 0: 
+                        node.expand(actions) # action으로 node 확장 
+                    reward = self.evaluate_board()
+                    while node is not None: # 역전파
+                        node.update(reward)
+                        node = node.parent
+                    
+            with concurrent.futures.ThreadPoolExecutor() as executor: # 멀티스레드
+                futures = [executor.submit(run_simulation, root, actions) for _ in range(simulation_count)]
+                concurrent.futures.wait(futures) # 비동기
 
             best_action = mcts.best_action(root)
             if best_action:
@@ -340,6 +346,8 @@ class Game:
 
         with open('replay_buffer.pkl', 'wb') as f:
             pickle.dump(self.replay_buffer, f)
+
+    
 
     def evaluate_board(self):
         piece_values = {

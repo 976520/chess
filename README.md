@@ -1,3 +1,5 @@
-> pip install -r requirements.txt
+```shell
+pip install -r requirements.txt
+```
 
 and run `main.py`

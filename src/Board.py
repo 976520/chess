@@ -23,7 +23,8 @@ class Board:
         self.computer_move_start = None
         self.computer_move_end = None
         
-
+    def draw_computer_move(self, start_row, start_col, move):
+        pass
 
     def initialize_board(self):
         board = np.full((8, 8), None)

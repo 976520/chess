@@ -14,8 +14,8 @@ class BoardDisplay:
         end_x, end_y = move[1] * 80 + 140, move[0] * 80 + 140
         self.screen.fill((128, 128, 128))
         self.screen.blit(self.background, (100, 100))
-        self.board_display.draw_board(self, [(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
-        self.board_display.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+        self.draw_board(self, [(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
+        self.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
         angle = np.arctan2(end_y - start_y, end_x - start_x)
         arrow_size = 10
         arrow_points = [

@@ -149,6 +149,13 @@ class GameOverDisplay:
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
 
+    def king_exists(self, board, color):
+        for row in board.board:
+            for piece in row:
+                if isinstance(piece, King) and piece.color == color:
+                    return True
+        return False
+
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
@@ -199,6 +206,7 @@ class Game:
         pygame.display.flip()
         self.game_over_display.display_game_over(self.board, self.current_turn)
 
+
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -221,6 +229,7 @@ class Game:
                 self.board.move_piece(self.selected_position, (row, col))
                 self.switch_turn()
                 self.turn_start_time = pygame.time.get_ticks()
+
             self.selected_piece = None
             self.selected_position = None
         else:

@@ -120,7 +120,11 @@ class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
         pygame.init()
         self.screen = pygame.display.set_mode((1000, 1000))
-        self.board = Board(self.screen)
+        self.background = pygame.image.load("assets/Background.png").convert()
+        self.background = pygame.transform.scale(self.background, (640, 640))  
+        self.piece_images = PieceImages.load_images()
+        self.board_display = BoardDisplay(self.screen, self.background, self.piece_images)
+        self.board = Board(self.screen, self.background, self.board_display)
         self.current_turn = 'white'
         self.selected_piece = None
         self.selected_position = None
@@ -133,21 +137,17 @@ class Game:
         self.game_over_display = GameOverDisplay(self.screen)
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
-        self.background = pygame.image.load("assets/Background.png").convert()
-        self.background = pygame.transform.scale(self.background, (640, 640))  
-
-        self.piece_images = PieceImages.load_images()
 
         self.menu_button = pygame.image.load("assets/Buttons/Menu.png").convert_alpha()
         self.menu_button = pygame.transform.scale(self.menu_button, (50, 50))
 
-        self.board_display = BoardDisplay(self.screen, self.background, self.piece_images)
         self.timer_display = TimerDisplay(self.screen, self.turn_time_limit)
         self.kill_log_display = KillLogDisplay(self.screen, self.piece_images)
         self.menu_button_display = MenuButtonDisplay(self.screen, self.menu_button)
 
     def play(self):
-        while not self.is_game_over():
+        game_over = False
+        while not game_over:
             self.handle_events()
             self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
             self.timer_display.display_timer(self.turn_start_time, self.current_turn, self.board)
@@ -161,9 +161,19 @@ class Game:
                     self.computer_move()
                     self.turn_start_time = pygame.time.get_ticks()
 
-        self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
-        pygame.display.flip()
-        self.game_over_display.display_game_over(self.board, self.current_turn)
+            if self.is_game_over():
+                self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
+                pygame.display.flip()
+                self.game_over_display.display_game_over(self.board, self.current_turn)
+                game_over = True
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    return
 
 
     def handle_events(self):
@@ -221,103 +231,68 @@ class Game:
                     return True
         return False
 
+
     def computer_move(self):
         state = self.board_to_numeric(self.board.board).flatten()
 
-        actions = []
-        for row in range(8):
-            for col in range(8):
-                piece = self.board.board[row, col]
-                if piece and piece.color == self.current_turn:
-                    possible_moves = piece.get_possible_moves(self.board.board, (row, col))
-                    if possible_moves:
-                        for move in possible_moves:
-                            actions.append(((row, col), move))
+        actions = [
+            ((row, col), move)
+            for row in range(8)
+            for col in range(8)
+            if (piece := self.board.board[row, col]) and piece.color == self.current_turn
+            for move in piece.get_possible_moves(self.board.board, (row, col))
+        ]
 
-        num_actions = len(actions)
-        policy_net = PolicyNetwork(num_actions)
+        if not actions:
+            return
+
+        policy_net = PolicyNetwork(len(actions))
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
-        gamma = 0.99  
+        gamma = 0.99
         simulation_count = 1
 
-        if actions:
-            mcts = MCTS(policy_net, value_net)
-            root = MCTSNode(state)
-            root.expand(actions)
+        mcts = MCTS(policy_net, value_net)
+        root = MCTSNode(state)
+        root.expand(actions)
 
-            def run_simulation(root, actions):
-                for _ in range(simulation_count): 
-                    node = root
-                    while not node.is_leaf():
-                        node = mcts.best_child(node)
-                    if node.visits > 0: 
-                        node.expand(actions) # action으로 node 확장 
-                    reward = self.evaluate_board()
-                    while node is not None: # 역전파
-                        node.update(reward)
-                        node = node.parent
-                    
-            with concurrent.futures.ThreadPoolExecutor() as executor: # 멀티스레드
-                futures = [executor.submit(run_simulation, root, actions) for _ in range(simulation_count)]
-                concurrent.futures.wait(futures) # 비동기
-
-            best_action = mcts.best_action(root)
-            if best_action:
-                (start_row, start_col), move = best_action
-
-                if self.board.board[move[0], move[1]] is not None:
-                    self.kill_log.append((self.board.board[start_row, start_col], self.board.board[move[0], move[1]]))
-
-                self.board.board[move[0], move[1]] = self.board.board[start_row, start_col]
-                self.board.board[start_row, start_col] = None
-
+        def run_simulation(root, actions):
+            for _ in range(simulation_count):
+                node = root
+                while not node.is_leaf():
+                    node = mcts.best_child(node)
+                if node.visits > 0:
+                    node.expand(actions)
                 reward = self.evaluate_board()
-                next_state = self.board_to_numeric(self.board.board).flatten()
+                while node:
+                    node.update(reward)
+                    node = node.parent
 
-                next_actions = []
-                for row in range(8):
-                    for col in range(8):
-                        piece = self.board.board[row, col]
-                        if piece and piece.color == self.current_turn:
-                            possible_moves = piece.get_possible_moves(self.board.board, (row, col))
-                            if possible_moves:
-                                for next_move in possible_moves:
-                                    next_actions.append(((row, col), next_move))
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(run_simulation, root, actions) for _ in range(simulation_count)]
+            concurrent.futures.wait(futures)
 
-                self.update_policy_and_value_net(policy_net, value_net, optimizer, state, actions.index(best_action), reward, next_state, next_actions, gamma)
+        best_action = mcts.best_action(root)
+        if not best_action:
+            return
 
-                self.board.move_piece((start_row, start_col), move)
-                self.switch_turn()
-                self.turn_start_time = pygame.time.get_ticks()
+        (start_row, start_col), move = best_action
+        if self.board.board[move[0], move[1]]:
+            self.kill_log.append((self.board.board[start_row, start_col], self.board.board[move[0], move[1]]))
 
-                if isinstance(self.board.board[move[0], move[1]], Pawn):
-                    if move[0] == 0 or move[0] == 7:
-                        self.board.board[move[0], move[1]].promote(self.board.board, move)
+        self.board.move_piece((start_row, start_col), move)
+        self.switch_turn()
+        self.turn_start_time = pygame.time.get_ticks()
 
-                self.board.computer_move_start = (start_row, start_col)
-                self.board.computer_move_end = move
-                start_x = start_col * 80 + 140
-                start_y = start_row * 80 + 140
-                end_x = move[1] * 80 + 140
-                end_y = move[0] * 80 + 140
-                self.screen.fill((128, 128, 128))  
-                self.screen.blit(self.background, (100, 100))  
-                self.board_display.draw_board(self.board, [(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
-                self.board_display.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
-                angle = np.arctan2(end_y - start_y, end_x - start_x)
-                arrow_size = 10
-                arrow_points = [
-                    (end_x, end_y),
-                    (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
-                    (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
-                ]
-                pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
-                pygame.display.flip()
+        if isinstance(self.board.board[move[0], move[1]], Pawn) and move[0] in {0, 7}:
+            self.board.board[move[0], move[1]].promote(self.board.board, move)
+
+        self.board.computer_move_start = (start_row, start_col)
+        self.board.computer_move_end = move
+        self.board.draw_computer_move(start_row, start_col, move) 
 
         torch.save(policy_net.state_dict(), 'policy_net.pth')
         torch.save(value_net.state_dict(), 'value_net.pth')
-
         with open('replay_buffer.pkl', 'wb') as f:
             pickle.dump(self.replay_buffer, f)
 

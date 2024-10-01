@@ -10,16 +10,35 @@ from Pieces.Pawn import Pawn
 from Pieces.Queen import Queen
 
 class Board:
-    def __init__(self, screen):
+    def __init__(self, screen, background, board_display):
         self.board = self.initialize_board()
         self.en_passant_target = None
         self.en_passant_turn = None 
         self.screen = screen
+        self.background = background
+        self.board_display = board_display
         self.last_move_start = None
         self.last_move_end = None
         self.last_move_turn = None  
         self.computer_move_start = None
         self.computer_move_end = None
+        
+    def draw_computer_move(self, start_row, start_col, move):
+        start_x, start_y = start_col * 80 + 140, start_row * 80 + 140
+        end_x, end_y = move[1] * 80 + 140, move[0] * 80 + 140
+        self.screen.fill((128, 128, 128))
+        self.screen.blit(self.background, (100, 100))
+        self.board_display.draw_board(self, [(255, 255, 255), (0, 0, 0)], pygame.font.SysFont(None, 24))  
+        self.board_display.draw_dashed_line(self.screen, (0, 0, 255), (start_x, start_y), (end_x, end_y), 5)
+        angle = np.arctan2(end_y - start_y, end_x - start_x)
+        arrow_size = 10
+        arrow_points = [
+            (end_x, end_y),
+            (end_x - arrow_size * np.cos(angle - np.pi / 6), end_y - arrow_size * np.sin(angle - np.pi / 6)),
+            (end_x - arrow_size * np.cos(angle + np.pi / 6), end_y - arrow_size * np.sin(angle + np.pi / 6))
+        ]
+        pygame.draw.polygon(self.screen, (0, 0, 255), arrow_points)
+        pygame.display.flip()
 
     def initialize_board(self):
         board = np.full((8, 8), None)

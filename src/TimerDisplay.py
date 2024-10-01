@@ -8,9 +8,8 @@ class TimerDisplay:
     def display_timer(self, turn_start_time, current_turn, board):
         elapsed_time = (pygame.time.get_ticks() - turn_start_time) / 1000
         remaining_time = max(0, self.turn_time_limit - elapsed_time)
-        if (remaining_time == 0):
-            self.switch_turn() 
-            turn_start_time = pygame.time.get_ticks() 
+        if remaining_time == 0:
+            return True 
 
         timer_width = int((remaining_time / self.turn_time_limit) * 640)
         
@@ -28,3 +27,4 @@ class TimerDisplay:
             pygame.draw.rect(self.screen, timer_color, pygame.Rect(100, 85, timer_width, 5))  
 
         pygame.display.update()
+        return False  

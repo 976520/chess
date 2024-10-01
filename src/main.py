@@ -2,9 +2,7 @@ import pygame
 import sys
 import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
-import random
 import pickle
 import concurrent.futures
 from Pieces.King import King
@@ -19,6 +17,10 @@ from BoardDisplay import BoardDisplay
 from TimerDisplay import TimerDisplay
 from KillLogDisplay import KillLogDisplay
 from MenuButtonDisplay import MenuButtonDisplay
+from MCTS import MCTS, MCTSNode
+from ReplayBuffer import ReplayBuffer
+from PolicyNetwork import PolicyNetwork
+from ValueNetwork import ValueNetwork
 
 class Menu:
     def __init__(self):
@@ -430,114 +432,6 @@ class Game:
         (policy_loss + value_loss).backward()
         optimizer.step()
 
-class MCTSNode:
-    def __init__(self, state, parent=None, action=None):
-        self.state = state
-        self.parent = parent
-        self.action = action
-        self.children = []
-        self.visits = 0
-        self.value = 0.0
-
-    def is_leaf(self):
-        return len(self.children) == 0
-
-    def expand(self, actions):
-        for action in actions:
-            next_state = self.get_next_state(self.state, action)
-            self.children.append(MCTSNode(next_state, parent=self, action=action)) 
-
-    def get_next_state(self, state, action):
-        new_board = np.copy(state).reshape(8, 8)  
-        (start_pos, end_pos) = action
-        piece = new_board[start_pos[0], start_pos[1]]
-        new_board[end_pos[0], end_pos[1]] = piece
-        new_board[start_pos[0], start_pos[1]] = None
-        return new_board
-
-    def update(self, reward):
-        self.visits += 1
-        self.value += (reward - self.value) / self.visits
-
-class MCTS:
-    def __init__(self, policy_net, value_net):
-        self.policy_net = policy_net
-        self.value_net = value_net
-
-    def best_child(self, node):
-        exploration_constant = 1.4  
-        best_score = -float('inf')
-        best_child_node = None
-        
-        state_tensor = torch.tensor(node.state, dtype=torch.float32).unsqueeze(0)
-        with torch.no_grad():
-            policy = self.policy_net(state_tensor).squeeze(0).numpy()
-            value = self.value_net(state_tensor).item()
-        
-        for i, child_node in enumerate(node.children):
-            policy_score = policy[i] if i < len(policy) else 0
-            score = child_node.value + exploration_constant * policy_score * np.sqrt(np.log(node.visits + 1) / (child_node.visits + 1))
-            if score > best_score:
-                best_score = score
-                best_child_node = child_node
-
-        return best_child_node if best_child_node is not None else node 
-
-    def best_action(self, root):
-        return max(root.children, key=lambda child_node: child_node.visits).action
-
-class ReplayBuffer:
-    def __init__(self, capacity):
-        self.buffer = []
-        self.capacity = capacity
-        self.position = 0
-
-    def push(self, state, action, reward, next_state):
-        if len(self.buffer) < self.capacity:
-            self.buffer.append(None)
-        self.buffer[self.position] = (state, action, reward, next_state)
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size):
-        return random.sample(self.buffer, batch_size)
-
-    def __len__(self):
-        return len(self.buffer)
-
-class PolicyNetwork(nn.Module):
-    def __init__(self, num_actions):
-        super(PolicyNetwork, self).__init__()
-        self.conv1 = nn.Conv2d(1, 128, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
-        self.conv3 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
-        self.fc1 = nn.Linear(256 * 8 * 8, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.fc3 = nn.Linear(512, num_actions)
-
-    def forward(self, x):
-        x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
-        x = torch.relu(self.conv2(x))
-        x = torch.relu(self.conv3(x))
-        x = x.view(-1, 256 * 8 * 8)
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        return self.fc3(x)
-
-class ValueNetwork(nn.Module):
-    def __init__(self):
-        super(ValueNetwork, self).__init__()
-        self.fc1 = nn.Linear(64, 1024)
-        self.fc2 = nn.Linear(1024, 512)
-        self.fc3 = nn.Linear(512, 512)
-        self.fc4 = nn.Linear(512, 1)
-
-    def forward(self, x):
-        x = x.view(-1, 64)  
-        x = torch.relu(self.fc1(x))
-        x = torch.relu(self.fc2(x))
-        x = torch.relu(self.fc3(x))
-        x = self.fc4(x)
-        return x
 
 if __name__ == "__main__":
     while True:

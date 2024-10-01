@@ -271,14 +271,14 @@ class Game:
             root = MCTSNode(state)
             root.expand(actions)
 
-            for _ in range(100): # 하...  
+            for _ in range(3): # 하 ...
                 node = root
                 while not node.is_leaf():
                     node = mcts.best_child(node)
-                if node.visits > 0:
-                    node.expand(actions)
+                if node.visits > 0: 
+                    node.expand(actions) # action으로 node 확장 
                 reward = self.evaluate_board()
-                while node is not None:
+                while node is not None: # 역전파
                     node.update(reward)
                     node = node.parent
 
@@ -499,30 +499,36 @@ class ReplayBuffer:
 class PolicyNetwork(nn.Module):
     def __init__(self, num_actions):
         super(PolicyNetwork, self).__init__()
-        self.conv1 = nn.Conv2d(1, 64, kernel_size=3, padding=1)
-        self.conv2 = nn.Conv2d(64, 128, kernel_size=3, padding=1)
-        self.fc1 = nn.Linear(128 * 8 * 8, 512)
-        self.fc2 = nn.Linear(512, num_actions)
+        self.conv1 = nn.Conv2d(1, 128, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv2d(128, 256, kernel_size=3, padding=1)
+        self.conv3 = nn.Conv2d(256, 256, kernel_size=3, padding=1)
+        self.fc1 = nn.Linear(256 * 8 * 8, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, num_actions)
 
     def forward(self, x):
         x = torch.relu(self.conv1(x.view(-1, 1, 8, 8)))
         x = torch.relu(self.conv2(x))
-        x = x.view(-1, 128 * 8 * 8)
+        x = torch.relu(self.conv3(x))
+        x = x.view(-1, 256 * 8 * 8)
         x = torch.relu(self.fc1(x))
-        return self.fc2(x)
+        x = torch.relu(self.fc2(x))
+        return self.fc3(x)
 
 class ValueNetwork(nn.Module):
     def __init__(self):
         super(ValueNetwork, self).__init__()
-        self.fc1 = nn.Linear(64, 512)
-        self.fc2 = nn.Linear(512, 512)
-        self.fc3 = nn.Linear(512, 1)
+        self.fc1 = nn.Linear(64, 1024)
+        self.fc2 = nn.Linear(1024, 512)
+        self.fc3 = nn.Linear(512, 512)
+        self.fc4 = nn.Linear(512, 1)
 
     def forward(self, x):
         x = x.view(-1, 64)  
         x = torch.relu(self.fc1(x))
         x = torch.relu(self.fc2(x))
-        x = self.fc3(x)
+        x = torch.relu(self.fc3(x))
+        x = self.fc4(x)
         return x
 
 if __name__ == "__main__":

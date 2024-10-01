@@ -114,6 +114,41 @@ class Menu:
             pygame.quit()
             sys.exit()
 
+class GameOverDisplay:
+    def __init__(self, screen):
+        self.screen = screen
+
+    def display_game_over(self, board, current_turn):
+        font_title = pygame.font.SysFont(None, 74)
+        font_subtitle = pygame.font.SysFont(None, 50)
+        
+        if board.is_checkmate(current_turn):
+            title_text = font_title.render(f"{current_turn.capitalize()} loses", True, (255, 0, 0))
+            subtitle_text = font_subtitle.render("Checkmate", True, (255, 255, 255))
+        elif not self.king_exists(board, current_turn):
+            title_text = font_title.render(f"{current_turn.capitalize()} loses", True, (255, 0, 0))
+            subtitle_text = font_subtitle.render("King captured", True, (255, 255, 255))
+        else:
+            title_text = font_title.render("Stalemate", True, (255, 255, 0))
+            subtitle_text = None
+
+        modal_surface = pygame.Surface((400, 200), pygame.SRCALPHA)
+        modal_surface.fill((0, 0, 0, 128))  
+        modal_surface.blit(title_text, (50, 50))
+        if subtitle_text:
+            modal_surface.blit(subtitle_text, (50, 120))
+
+        self.screen.blit(modal_surface, (300, 400))
+        pygame.display.flip()
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    sys.exit()
+                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+                    return
+
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
@@ -129,7 +164,7 @@ class Game:
         self.computer_vs_computer = computer_vs_computer
         self.kill_log = []
         self.replay_buffer = ReplayBuffer(10000)  
-
+        self.game_over_display = GameOverDisplay(self.screen)
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
         self.background = pygame.image.load("assets/Background.png").convert()
@@ -162,7 +197,7 @@ class Game:
 
         self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
         pygame.display.flip()
-        self.display_game_over()
+        self.game_over_display.display_game_over(self.board, self.current_turn)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -217,37 +252,6 @@ class Game:
                 if isinstance(piece, King) and piece.color == color:
                     return True
         return False
-
-    def display_game_over(self):
-        font_title = pygame.font.SysFont(None, 74)
-        font_subtitle = pygame.font.SysFont(None, 50)
-        
-        if self.board.is_checkmate(self.current_turn):
-            title_text = font_title.render(f"{self.current_turn.capitalize()} loses", True, (255, 0, 0))
-            subtitle_text = font_subtitle.render("Checkmate", True, (255, 255, 255))
-        elif not self.king_exists(self.current_turn):
-            title_text = font_title.render(f"{self.current_turn.capitalize()} loses", True, (255, 0, 0))
-            subtitle_text = font_subtitle.render("King captured", True, (255, 255, 255))
-        else:
-            title_text = font_title.render("Stalemate", True, (255, 255, 0))
-            subtitle_text = None
-
-        modal_surface = pygame.Surface((400, 200), pygame.SRCALPHA)
-        modal_surface.fill((0, 0, 0, 128))  
-        modal_surface.blit(title_text, (50, 50))
-        if subtitle_text:
-            modal_surface.blit(subtitle_text, (50, 120))
-
-        self.screen.blit(modal_surface, (300, 400))
-        pygame.display.flip()
-
-        while True:
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    return
 
     def computer_move(self):
         state = self.board_to_numeric(self.board.board).flatten()
@@ -349,7 +353,6 @@ class Game:
         with open('replay_buffer.pkl', 'wb') as f:
             pickle.dump(self.replay_buffer, f)
 
-    
 
     def evaluate_board(self):
         piece_values = {
@@ -360,16 +363,17 @@ class Game:
             Knight: 3,
             Pawn: 1
         }
-        score = 0
-        for row in self.board.board:
-            for piece in row:
-                if piece:
-                    value = piece_values[type(piece)]
-                    if piece.color == 'black':
-                        score += value
-                    else:
-                        score -= value
-        return score
+
+        def evaluate_piece(piece):
+            if piece:
+                value = piece_values[type(piece)]
+                return value if piece.color == 'black' else -value
+            return 0
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            scores = executor.map(evaluate_piece, [piece for row in self.board.board for piece in row])
+
+        return sum(scores)
 
     def board_to_numeric(self, board):
         numeric_board = np.zeros((8, 8), dtype=np.float32)

@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import concurrent.futures
 
 class MCTSNode:
     def __init__(self, state, parent=None, action=None):
@@ -45,12 +46,18 @@ class MCTS:
             policy = self.policy_net(state_tensor).squeeze(0).numpy()
             value = self.value_net(state_tensor).item()
         
-        for i, child_node in enumerate(node.children):
+        def compute_score(i, child_node):
             policy_score = policy[i] if i < len(policy) else 0
             score = child_node.value + exploration_constant * policy_score * np.sqrt(np.log(node.visits + 1) / (child_node.visits + 1))
-            if score > best_score:
-                best_score = score
-                best_child_node = child_node
+            return score, child_node
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            futures = [executor.submit(compute_score, i, child_node) for i, child_node in enumerate(node.children)]
+            for future in concurrent.futures.as_completed(futures):
+                score, child_node = future.result()
+                if score > best_score:
+                    best_score = score
+                    best_child_node = child_node
 
         return best_child_node if best_child_node is not None else node 
 

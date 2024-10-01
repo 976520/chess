@@ -11,5 +11,5 @@ class Knight(Piece):
                 if board[new_pos[0], new_pos[1]] is None:
                     moves.append(tuple(new_pos))
                 elif board[new_pos[0], new_pos[1]].color != self.color:
-                    continue
+                    moves.append(tuple(new_pos))  
         return moves

@@ -14,8 +14,11 @@ class GameOverDisplay:
         if board.is_checkmate(current_turn):
             title_text = font_title.render(f"{current_turn.capitalize()} loses", True, (255, 0, 0))
             subtitle_text = font_subtitle.render("Checkmate", True, (255, 255, 255))
-        elif not self.king_exists(board, current_turn):
-            title_text = font_title.render(f"{current_turn.capitalize()} loses", True, (255, 0, 0))
+        elif board.king_exists(current_turn):
+            if current_turn == 'white':
+                title_text = font_title.render(f"Black loses", True, (255, 0, 0))
+            elif current_turn == 'black':
+                title_text = font_title.render(f"White loses", True, (255, 0, 0))
             subtitle_text = font_subtitle.render("King captured", True, (255, 255, 255))
         else:
             title_text = font_title.render("Stalemate", True, (255, 255, 0))

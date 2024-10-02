@@ -1,5 +1,4 @@
 import pygame
-import sys
 import numpy as np
 
 from Pieces.King import King
@@ -8,6 +7,7 @@ from Pieces.Bishop import Bishop
 from Pieces.Knight import Knight
 from Pieces.Pawn import Pawn
 from Pieces.Queen import Queen
+from GameOverDisplay import GameOverDisplay
 
 class Board:
     def __init__(self, screen, background, board_display):
@@ -17,6 +17,7 @@ class Board:
         self.screen = screen
         self.background = background
         self.board_display = board_display
+        self.game_over_display = GameOverDisplay(screen)  # 수정된 부분
         self.last_move_start = None
         self.last_move_end = None
         self.last_move_turn = None  
@@ -47,64 +48,48 @@ class Board:
         piece = self.board[start_pos[0], start_pos[1]]
         if piece:
             possible_moves = piece.get_possible_moves(self.board, start_pos)
-            if possible_moves: 
-                if end_pos in possible_moves:
-                    target_piece = self.board[end_pos[0], end_pos[1]]
-                    if isinstance(target_piece, King):
-                        print(f"{piece.color.capitalize()} wins")
-                        pygame.quit()
-                        sys.exit()
+            if end_pos in possible_moves:
+                target_piece = self.board[end_pos[0], end_pos[1]]
+                if isinstance(target_piece, King):
+                    self.game_over_display.display_game_over(self, piece.color)
+                    return
 
-            if isinstance(piece, King):
-                if abs(start_pos[1] - end_pos[1]) == 2:
-                    if end_pos[1] == 6: 
-                        self.board[start_pos[0], 5] = self.board[start_pos[0], 7]
-                        self.board[start_pos[0], 7] = None
-                    elif end_pos[1] == 2: 
-                        self.board[start_pos[0], 3] = self.board[start_pos[0], 0]
-                        self.board[start_pos[0], 0] = None
+                if isinstance(piece, King):
+                    if abs(start_pos[1] - end_pos[1]) == 2:
+                        if end_pos[1] == 6: 
+                            self.board[start_pos[0], 5] = self.board[start_pos[0], 7]
+                            self.board[start_pos[0], 7] = None
+                        elif end_pos[1] == 2: 
+                            self.board[start_pos[0], 3] = self.board[start_pos[0], 0]
+                            self.board[start_pos[0], 0] = None
 
-            if isinstance(piece, Pawn):
-                if end_pos == self.en_passant_target:
-                    if self.last_move_turn is None or self.get_turn_count() - self.last_move_turn > 1:
-                        return  
-                    self.board[start_pos[0], end_pos[1]] = None
+                if isinstance(piece, Pawn):
+                    if end_pos == self.en_passant_target:
+                        self.board[start_pos[0], end_pos[1]] = None
 
-            original_piece = self.board[end_pos[0], end_pos[1]]
-            self.board[end_pos[0], end_pos[1]] = piece
-            self.board[start_pos[0], start_pos[1]] = None
-            if self.is_in_check(piece.color):
-                self.board[start_pos[0], start_pos[1]] = piece
-                self.board[end_pos[0], end_pos[1]] = original_piece
-                return
-            self.board[start_pos[0], start_pos[1]] = piece
-            self.board[end_pos[0], end_pos[1]] = original_piece
+                original_piece = self.board[end_pos[0], end_pos[1]]
+                self.board[end_pos[0], end_pos[1]] = piece
+                self.board[start_pos[0], start_pos[1]] = None
 
-            self.board[end_pos[0], end_pos[1]] = piece
-            self.board[start_pos[0], start_pos[1]] = None
+                if self.is_in_check(piece.color):
+                    self.board[start_pos[0], start_pos[1]] = piece
+                    self.board[end_pos[0], end_pos[1]] = original_piece
+                    return
 
-            self.last_move_start = start_pos
-            self.last_move_end = end_pos
-            self.last_move_turn = self.get_turn_count()  
+                self.last_move_start = start_pos
+                self.last_move_end = end_pos
+                self.last_move_turn = self.get_turn_count()
 
-            if isinstance(piece, Pawn): 
-                if abs(start_pos[0] - end_pos[0]) == 2:
-                    self.en_passant_target = (start_pos[0] + (end_pos[0] - start_pos[0]) // 2, start_pos[1])
-                    self.en_passant_turn = self.get_turn_count()  
-                    piece.en_passant_target = True
-                else:
-                    piece.en_passant_target = None
+                if isinstance(piece, Pawn):
+                    if abs(start_pos[0] - end_pos[0]) == 2:
+                        self.en_passant_target = (start_pos[0] + (end_pos[0] - start_pos[0]) // 2, start_pos[1])
+                        self.en_passant_turn = self.get_turn_count()
+                    else:
+                        self.en_passant_target = None
 
-            if isinstance(piece, Pawn): 
-                if self.en_passant_target and end_pos == self.en_passant_target:
-                    if self.get_turn_count() - self.en_passant_turn > 1:
-                        return  
-                    self.board[start_pos[0], end_pos[1]] = None
+                piece.has_moved = True
 
-            piece.has_moved = True
-                
-            if isinstance(piece, Pawn):
-                if end_pos[0] == 0 or end_pos[0] == 7:
+                if isinstance(piece, Pawn) and (end_pos[0] == 0 or end_pos[0] == 7):
                     piece.promote(self.board, end_pos)
 
     def get_turn(self):
@@ -112,6 +97,13 @@ class Board:
 
     def get_turn_count(self):
         return pygame.time.get_ticks() // 1000  
+    
+    def king_exists(self, color):
+        for row in self.board:
+            for piece in row:
+                if isinstance(piece, King) and piece.color == color:
+                    return True
+        return False
 
     def is_in_check(self, color):
         king_position = None
@@ -161,24 +153,31 @@ class Board:
         return True
 
     def is_stalemate(self, color):
+        # 현재 플레이어가 체크 상태
         if self.is_in_check(color):
             return False
-
+        
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
-                if piece: 
-                    if piece.color == color:
-                        possible_moves = piece.get_possible_moves(self.board, (i, j))
-                        if possible_moves:
-                            for move in possible_moves:
-                                original_piece = self.board[move[0], move[1]]
-                                self.board[move[0], move[1]] = piece
-                                self.board[i, j] = None
-                                if not self.is_in_check(color):
-                                    self.board[i, j] = piece
-                                    self.board[move[0], move[1]] = original_piece
-                                    return False
-                                self.board[i, j] = piece
-                                self.board[move[0], move[1]] = original_piece
+                # 현재 칸에 있는 말이 현재 플레이어의 말인지 확인
+                if piece and piece.color == color:
+                    # 현재 말의 가능한 이동 경로를 가져와서
+                    possible_moves = piece.get_possible_moves(self.board, (i, j))
+                    for move in possible_moves:
+                        # 이동할 위치에 있는 말을 임시로 저장
+                        original_piece = self.board[move[0], move[1]]
+                        # 현재 말을 이동할 위치로 이동
+                        self.board[move[0], move[1]] = piece
+                        self.board[i, j] = None
+                        # 이동 후 체크 상태가 아닌지 확인
+                        if not self.is_in_check(color):
+                            # 체크 상태가 아니라면 원래 위치로
+                            self.board[i, j] = piece
+                            self.board[move[0], move[1]] = original_piece
+                            return False
+                        # 체크 상태라면 원래 위치로 회귀
+                        self.board[i, j] = piece
+                        self.board[move[0], move[1]] = original_piece
+        # 모든 가능한 이동 후에도 체크 상태가 아니라면 stalemate
         return True

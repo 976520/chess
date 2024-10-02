@@ -222,15 +222,17 @@ class Game:
                     self.en_passant_target = False
 
     def is_game_over(self):
-        return self.board.is_checkmate(self.current_turn) or self.board.is_stalemate(self.current_turn) or not self.king_exists(self.current_turn)
-
-    def king_exists(self, color):
-        for row in self.board.board:
-            for piece in row:
-                if isinstance(piece, King) and piece.color == color:
-                    return True
+        if self.board.is_checkmate(self.current_turn):
+            self.board.display_game_over(self.current_turn)
+            return True
+        elif self.board.is_stalemate(self.current_turn):
+            self.board.display_game_over(self.current_turn)
+            return True
+        elif not self.board.king_exists(self.current_turn):
+            self.board.display_game_over(self.current_turn)
+            return True
         return False
-
+    
 
     def computer_move(self):
         state = self.board_to_numeric(self.board.board).flatten()
@@ -250,7 +252,7 @@ class Game:
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 1
+        simulation_count = 2
 
         mcts = MCTS(policy_net, value_net)
         root = MCTSNode(state)
@@ -295,6 +297,8 @@ class Game:
         torch.save(value_net.state_dict(), 'value_net.pth')
         with open('replay_buffer.pkl', 'wb') as f:
             pickle.dump(self.replay_buffer, f)
+
+
 
 
     def evaluate_board(self):

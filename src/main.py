@@ -236,7 +236,7 @@ class Game:
 
     def computer_move(self):
         state = self.board_to_numeric(self.board.board).flatten()
-
+        reward = 0
         actions = [
             ((row, col), move)
             for row in range(8)
@@ -265,7 +265,7 @@ class Game:
                     node = mcts.best_child(node)
                 if node.visits > 0:
                     node.expand(actions)
-                reward = self.evaluate_board()
+                self.reward = self.evaluate_board()
                 while node:
                     node.update(reward)
                     node = node.parent
@@ -297,6 +297,9 @@ class Game:
         torch.save(value_net.state_dict(), 'value_net.pth')
         with open('replay_buffer.pkl', 'wb') as f:
             pickle.dump(self.replay_buffer, f)
+        
+        next_state = self.board_to_numeric(self.board.board).flatten()
+        self.update_policy_and_value_net(policy_net, value_net, optimizer, state, best_action, reward, next_state, gamma)
 
 
     def evaluate_board(self):
@@ -358,7 +361,7 @@ class Game:
         else:
             return np.random.choice(len(actions), p=action_probabilities), value 
 
-    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, next_actions, gamma):
+    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, gamma):
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
         action_tensor = torch.tensor([action], dtype=torch.int64)
@@ -374,8 +377,8 @@ class Game:
         value = value_net(state_tensor).item()
         action_probability = policy[action_tensor]
         advantage = reward_tensor + gamma * next_value - value
-        policy_loss = -torch.log(action_probability) * advantage
-        value_loss = advantage.pow(2)
+        policy_loss = (-torch.log(action_probability) * advantage).mean()
+        value_loss = advantage.pow(2).mean()
 
         optimizer.zero_grad()
         (policy_loss + value_loss).backward()

@@ -299,8 +299,6 @@ class Game:
             pickle.dump(self.replay_buffer, f)
 
 
-
-
     def evaluate_board(self):
         piece_values = {
             King: 1000,
@@ -348,11 +346,11 @@ class Game:
             action_probabilities = np.exp(policy) / np.sum(np.exp(policy)) 
         else:
             for idx, action in enumerate(actions):
-                action_probabilities[idx] = policy[idx]
+                action_probabilities[idx] = policy[actions.index(action)]
 
             if np.sum(action_probabilities) > 0:
                 action_probabilities /= np.sum(action_probabilities)
-            else:
+            else :
                 action_probabilities = np.ones(len(actions)) / len(actions)  
 
         if np.random.rand() < epsilon:

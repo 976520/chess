@@ -5,6 +5,7 @@ import torch
 import torch.optim as optim
 import pickle
 import concurrent.futures
+
 from Pieces.King import King
 from Pieces.Rook import Rook
 from Pieces.Bishop import Bishop
@@ -252,7 +253,7 @@ class Game:
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 2
+        simulation_count = 4
 
         mcts = MCTS(policy_net, value_net)
         root = MCTSNode(state)

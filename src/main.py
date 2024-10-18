@@ -301,7 +301,6 @@ class Game:
         next_state = self.board_to_numeric(self.board.board).flatten()
         self.update_policy_and_value_net(policy_net, value_net, optimizer, state, best_action, reward, next_state, gamma)
 
-
     def evaluate_board(self):
         piece_values = {
             King: 1000,
@@ -383,7 +382,6 @@ class Game:
         optimizer.zero_grad()
         (policy_loss + value_loss).backward()
         optimizer.step()
-
 
 if __name__ == "__main__":
     while True:

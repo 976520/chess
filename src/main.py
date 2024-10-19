@@ -253,7 +253,7 @@ class Game:
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 4
+        simulation_count = 500
 
         mcts = MCTS(policy_net, value_net)
         root = MCTSNode(state)

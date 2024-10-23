@@ -5,6 +5,8 @@ import torch
 import torch.optim as optim
 import pickle
 import concurrent.futures
+import asyncio
+import websockets
 
 from Pieces.King import King
 from Pieces.Rook import Rook
@@ -146,6 +148,15 @@ class Game:
         self.kill_log_display = KillLogDisplay(self.screen, self.piece_images)
         self.menu_button_display = MenuButtonDisplay(self.screen, self.menu_button)
 
+    async def send_game_state(self, state):
+        async with websockets.connect('ws://localhost:8000') as websocket:
+            await websocket.send(state)
+
+    async def receive_game_state(self):
+        async with websockets.connect('ws://localhost:8000') as websocket:
+            state = await websocket.recv()
+            return state
+
     def play(self):
         game_over = False
         while not game_over:
@@ -168,6 +179,10 @@ class Game:
                 self.game_over_display.display_game_over(self.board, self.current_turn)
                 game_over = True
 
+            asyncio.run(self.send_game_state(self.board_to_numeric(self.board.board).flatten()))
+            new_state = asyncio.run(self.receive_game_state())
+            self.update_board(new_state)
+
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -175,7 +190,6 @@ class Game:
                     sys.exit()
                 elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
                     return
-
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -253,7 +267,7 @@ class Game:
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 500
+        simulation_count = 4
 
         mcts = MCTS(policy_net, value_net)
         root = MCTSNode(state)
@@ -384,6 +398,10 @@ class Game:
         (policy_loss + value_loss).backward()
         optimizer.step()
 
+    def update_board(self, new_state):
+        pass
+
 if __name__ == "__main__":
-    while True:
-        Menu().run()
+    start_server = websockets.serve(Game().play, "localhost", 8000)
+    asyncio.get_event_loop().run_until_complete(start_server)
+    asyncio.get_event_loop().run_forever()

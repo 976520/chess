@@ -5,8 +5,6 @@ import torch
 import torch.optim as optim
 import pickle
 import concurrent.futures
-import asyncio
-import websockets
 
 from Pieces.King import King
 from Pieces.Rook import Rook
@@ -148,15 +146,6 @@ class Game:
         self.kill_log_display = KillLogDisplay(self.screen, self.piece_images)
         self.menu_button_display = MenuButtonDisplay(self.screen, self.menu_button)
 
-    async def send_game_state(self, state):
-        async with websockets.connect('ws://localhost:8000') as websocket:
-            await websocket.send(state)
-
-    async def receive_game_state(self):
-        async with websockets.connect('ws://localhost:8000') as websocket:
-            state = await websocket.recv()
-            return state
-
     def play(self):
         game_over = False
         while not game_over:
@@ -178,10 +167,6 @@ class Game:
                 pygame.display.flip()
                 self.game_over_display.display_game_over(self.board, self.current_turn)
                 game_over = True
-
-            asyncio.run(self.send_game_state(self.board_to_numeric(self.board.board).flatten()))
-            new_state = asyncio.run(self.receive_game_state())
-            self.update_board(new_state)
 
         while True:
             for event in pygame.event.get():
@@ -402,6 +387,5 @@ class Game:
         pass
 
 if __name__ == "__main__":
-    start_server = websockets.serve(Game().play, "localhost", 8000)
-    asyncio.get_event_loop().run_until_complete(start_server)
-    asyncio.get_event_loop().run_forever()
+    game = Game()
+    game.play()

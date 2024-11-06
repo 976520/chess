@@ -1,5 +1,6 @@
 import pygame
 import sys
+import os
 import numpy as np
 import torch
 import torch.optim as optim
@@ -24,6 +25,10 @@ from PolicyNetwork import PolicyNetwork
 from ValueNetwork import ValueNetwork
 from widgets.informations.GameOverDisplay import GameOverDisplay
 from pages.Menu import Menu
+
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):

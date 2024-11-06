@@ -1,7 +1,7 @@
 import pygame
 import numpy as np
 
-from Pieces.King import King
+from widgets.pieces.King import King
 
 class BoardDisplay:
     def __init__(self, screen, background, piece_images):

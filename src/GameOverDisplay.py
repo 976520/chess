@@ -1,6 +1,6 @@
 import pygame
 import sys
-from Pieces.King import King
+from widgets.pieces.King import King
 
 class GameOverDisplay:
     def __init__(self, screen):

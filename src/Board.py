@@ -1,12 +1,12 @@
 import pygame
 import numpy as np
 
-from Pieces.King import King
-from Pieces.Rook import Rook
-from Pieces.Bishop import Bishop
-from Pieces.Knight import Knight
-from Pieces.Pawn import Pawn
-from Pieces.Queen import Queen
+from widgets.pieces.King import King
+from widgets.pieces.Rook import Rook
+from widgets.pieces.Bishop import Bishop
+from widgets.pieces.Knight import Knight
+from widgets.pieces.Pawn import Pawn
+from widgets.pieces.Queen import Queen
 from GameOverDisplay import GameOverDisplay
 
 class Board:
@@ -17,7 +17,7 @@ class Board:
         self.screen = screen
         self.background = background
         self.board_display = board_display
-        self.game_over_display = GameOverDisplay(screen)  # 수정된 부분
+        self.game_over_display = GameOverDisplay(screen)  
         self.last_move_start = None
         self.last_move_end = None
         self.last_move_turn = None  

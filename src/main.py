@@ -6,12 +6,12 @@ import torch.optim as optim
 import pickle
 import concurrent.futures
 
-from Pieces.King import King
-from Pieces.Rook import Rook
-from Pieces.Bishop import Bishop
-from Pieces.Knight import Knight
-from Pieces.Pawn import Pawn
-from Pieces.Queen import Queen
+from widgets.pieces.King import King
+from widgets.pieces.Rook import Rook
+from widgets.pieces.Bishop import Bishop
+from widgets.pieces.Knight import Knight
+from widgets.pieces.Pawn import Pawn
+from widgets.pieces.Queen import Queen
 from Board import Board
 from PieceImages import PieceImages
 from BoardDisplay import BoardDisplay

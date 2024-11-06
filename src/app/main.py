@@ -19,11 +19,11 @@ from widgets.informations.BoardDisplay import BoardDisplay
 from widgets.informations.TimerDisplay import TimerDisplay
 from widgets.informations.KillLogDisplay import KillLogDisplay
 from widgets.buttons.MenuButtonDisplay import MenuButtonDisplay
-from MCTS import MCTS, MCTSNode
-from ReplayBuffer import ReplayBuffer
-from PolicyNetwork import PolicyNetwork
-from ValueNetwork import ValueNetwork
 from widgets.informations.GameOverDisplay import GameOverDisplay
+from features.decision.MCTS import MCTS, MCTSNode
+from features.decision.ReplayBuffer import ReplayBuffer
+from features.decision.PolicyNetwork import PolicyNetwork
+from features.decision.ValueNetwork import ValueNetwork
 from pages.Menu import Menu
 
 current_dir = os.path.dirname(os.path.abspath(__file__))

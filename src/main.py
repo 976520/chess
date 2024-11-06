@@ -35,17 +35,7 @@ class Menu:
         self.title_text = self.title_font.render("chess in python", True, (255, 255, 255))
         self.title_rect = self.title_text.get_rect(center=(self.screen.get_width() // 2, 100))
 
-        self.human_img = pygame.image.load("assets/Buttons/Human.png").convert_alpha()
-        self.computer_img = pygame.image.load("assets/Buttons/Computer.png").convert_alpha()
-        self.computer_vs_computer_img = pygame.image.load("assets/Buttons/Mirror.png").convert_alpha()
-        self.exit_img = pygame.image.load("assets/Buttons/Exit.png").convert_alpha()
-
-        self.human_img_with_bg = self.create_button_with_bg(self.human_img)
-        self.computer_img_with_bg = self.create_button_with_bg(self.computer_img)
-        self.mirror_img_with_bg = self.create_button_with_bg(self.computer_vs_computer_img)
-        self.exit_img_with_bg = self.create_button_with_bg(self.exit_img)
-
-        self.options = [self.human_img_with_bg, self.computer_img_with_bg, self.mirror_img_with_bg, self.exit_img_with_bg]
+        self.options = [self.create_button_with_bg(pygame.image.load("assets/Buttons/Human.png").convert_alpha()), self.create_button_with_bg(pygame.image.load("assets/Buttons/Computer.png").convert_alpha()), self.create_button_with_bg(pygame.image.load("assets/Buttons/Mirror.png").convert_alpha()), self.create_button_with_bg(pygame.image.load("assets/Buttons/Exit.png").convert_alpha())]
         self.option_texts = ["human vs human", "human vs computer", "computer vs computer", "exit"]
         self.option_rects = [pygame.Rect(100 + i * (option.get_width() + 100), 400, option.get_width(), option.get_height()) for i, option in enumerate(self.options)]
         self.selected_option = 0

@@ -7,7 +7,7 @@ from widgets.pieces.Bishop import Bishop
 from widgets.pieces.Knight import Knight
 from widgets.pieces.Pawn import Pawn
 from widgets.pieces.Queen import Queen
-from widgets.information.GameOverDisplay import GameOverDisplay
+from widgets.informations.GameOverDisplay import GameOverDisplay
 
 class Board:
     def __init__(self, screen, background, board_display):

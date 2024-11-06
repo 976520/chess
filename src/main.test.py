@@ -1,5 +1,5 @@
 import unittest
-from main import Game
+from app.main import Game
 import pygame
 
 class TestGameInitialization(unittest.TestCase):

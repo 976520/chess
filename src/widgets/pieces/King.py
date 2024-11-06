@@ -1,7 +1,7 @@
 import numpy as np
 from Piece import Piece
 
-from Pieces.Rook import Rook
+from widgets.pieces.Rook import Rook
 
 class King(Piece):
     def __init__(self, color):

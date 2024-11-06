@@ -1,6 +1,6 @@
 import numpy as np
 from Piece import Piece
-from Pieces.Queen import Queen
+from widgets.pieces.Queen import Queen
 
 class Pawn(Piece):
     def __init__(self, color):
@@ -50,7 +50,6 @@ class Pawn(Piece):
                             if (self.color == 'white' and position[0] == 3) or (self.color == 'black' and position[0] == 4):
                                 moves.append((position[0] + direction, new_pos[1]))
                             
-
         return moves
 
     def promote(self, board, position):

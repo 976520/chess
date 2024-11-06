@@ -153,31 +153,22 @@ class Board:
         return True
 
     def is_stalemate(self, color):
-        # 현재 플레이어가 체크 상태
         if self.is_in_check(color):
             return False
         
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
-                # 현재 칸에 있는 말이 현재 플레이어의 말인지 확인
                 if piece and piece.color == color:
-                    # 현재 말의 가능한 이동 경로를 가져와서
                     possible_moves = piece.get_possible_moves(self.board, (i, j))
                     for move in possible_moves:
-                        # 이동할 위치에 있는 말을 임시로 저장
                         original_piece = self.board[move[0], move[1]]
-                        # 현재 말을 이동할 위치로 이동
                         self.board[move[0], move[1]] = piece
                         self.board[i, j] = None
-                        # 이동 후 체크 상태가 아닌지 확인
                         if not self.is_in_check(color):
-                            # 체크 상태가 아니라면 원래 위치로
                             self.board[i, j] = piece
                             self.board[move[0], move[1]] = original_piece
                             return False
-                        # 체크 상태라면 원래 위치로 회귀
                         self.board[i, j] = piece
                         self.board[move[0], move[1]] = original_piece
-        # 모든 가능한 이동 후에도 체크 상태가 아니라면 stalemate
         return True

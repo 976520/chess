@@ -30,6 +30,6 @@ class TestGameInitialization(unittest.TestCase):
         self.assertEqual(self.game.selected_piece, self.game.board.board[1, 1])
         self.assertEqual(self.game.selected_position, (1, 1))
 
-        
+                    
 if __name__ == '__main__':
     unittest.main()

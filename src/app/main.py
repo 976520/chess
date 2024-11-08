@@ -1,6 +1,9 @@
 import pygame
 import sys
 import os
+
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
 import numpy as np
 import torch
 import torch.optim as optim
@@ -14,6 +17,7 @@ from widgets.pieces.Knight import Knight
 from widgets.pieces.Pawn import Pawn
 from widgets.pieces.Queen import Queen
 from pages.Board import Board
+from pages.Menu import Menu
 from PieceImages import PieceImages
 from widgets.informations.BoardDisplay import BoardDisplay
 from widgets.informations.TimerDisplay import TimerDisplay
@@ -24,11 +28,6 @@ from features.decision.MCTS import MCTS, MCTSNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
-from pages.Menu import Menu
-
-current_dir = os.path.dirname(os.path.abspath(__file__))
-parent_dir = os.path.dirname(current_dir)
-sys.path.append(parent_dir)
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
@@ -265,7 +264,7 @@ class Game:
 
             if np.sum(action_probabilities) > 0:
                 action_probabilities /= np.sum(action_probabilities)
-            else :
+            else:
                 action_probabilities = np.ones(len(actions)) / len(actions)  
 
         if np.random.rand() < epsilon:

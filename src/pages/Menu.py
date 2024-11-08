@@ -1,5 +1,6 @@
 import pygame
 import sys
+from app.main import Game
 
 class Menu:
     def __init__(self):

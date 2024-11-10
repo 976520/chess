@@ -25,7 +25,15 @@ class Board:
         self.computer_move_end = None
         
     def draw_computer_move(self, start_row, start_col, move):
-        pass
+        start_pos = (start_row, start_col)
+        end_pos = move
+        
+        piece = self.board[start_pos[0], start_pos[1]]
+        self.board[end_pos[0], end_pos[1]] = piece
+        self.board[start_pos[0], start_pos[1]] = None
+        
+        self.computer_move_start = start_pos
+        self.computer_move_end = end_pos
 
     def initialize_board(self):
         board = np.full((8, 8), None)

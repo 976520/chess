@@ -17,8 +17,6 @@ from widgets.pieces.Knight import Knight
 from widgets.pieces.Pawn import Pawn
 from widgets.pieces.Queen import Queen
 from pages.Board import Board
-from pages.Menu import Menu
-from PieceImages import PieceImages
 from widgets.informations.BoardDisplay import BoardDisplay
 from widgets.informations.TimerDisplay import TimerDisplay
 from widgets.informations.KillLogDisplay import KillLogDisplay

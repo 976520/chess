@@ -1,6 +1,5 @@
 import pygame
 import sys
-from app.main import Game
 
 class Menu:
     def __init__(self):
@@ -71,6 +70,8 @@ class Menu:
                 self.execute_selected_option()
 
     def execute_selected_option(self):
+        from app.main import Game
+
         if self.selected_option == 0:
             game = Game()
             game.play()

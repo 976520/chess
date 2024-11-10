@@ -1,6 +1,5 @@
 import numpy as np
-from Piece import Piece
-
+from widgets.pieces.Piece import Piece
 
 class Bishop(Piece):
     def get_possible_moves(self, board, position):

@@ -26,6 +26,7 @@ from features.decision.MCTS import MCTS, MCTSNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
+from styles.PieceImages import PieceImages
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):

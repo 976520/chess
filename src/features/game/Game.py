@@ -27,6 +27,7 @@ from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
 from styles.PieceImages import PieceImages
+from pages.Menu import Menu
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
@@ -96,29 +97,9 @@ class Game:
                 self.handle_mousebuttondown()
 
     def handle_mousebuttondown(self):
-        mouse_position = pygame.mouse.get_pos()
-        if 900 <= mouse_position[0] <= 950 and 20 <= mouse_position[1] <= 70:
-            Menu().run()
-            return
-        row, col = (mouse_position[1] - 100) // 80, (mouse_position[0] - 100) // 80
-        if self.selected_piece:
-            possible_moves = self.selected_piece.get_possible_moves(self.board.board, self.selected_position)
-            if possible_moves and (row, col) in possible_moves:
-                if self.board.board[row, col] is not None:
-                    self.kill_log.append((self.selected_piece, self.board.board[row, col]))
-                self.board.move_piece(self.selected_position, (row, col))
-                self.switch_turn()
-                self.turn_start_time = pygame.time.get_ticks()
-
-            self.selected_piece = None
-            self.selected_position = None
-        else:
-            piece = self.board.board[row, col]
-            if piece:
-                if piece.color == self.current_turn:
-                    self.selected_piece = piece
-                    self.selected_position = (row, col)
-
+        Menu().run()
+        return
+      
     def switch_turn(self):
         if self.current_turn == 'white':
             self.current_turn = 'black'

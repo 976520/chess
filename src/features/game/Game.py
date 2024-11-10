@@ -2,7 +2,7 @@ import pygame
 import sys
 import os
 
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import torch
@@ -297,8 +297,3 @@ class Game:
 
     def update_board(self, new_state):
         pass
-
-if __name__ == "__main__":
-    game = Game()
-    game.play()
-    Menu().run()

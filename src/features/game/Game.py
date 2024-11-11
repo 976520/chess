@@ -13,21 +13,21 @@ import concurrent.futures
 from widgets.pieces.King import King
 from widgets.pieces.Rook import Rook
 from widgets.pieces.Bishop import Bishop
-from widgets.pieces.Knight import Knight
+from widgets.pieces.Knight import Knight  
 from widgets.pieces.Pawn import Pawn
 from widgets.pieces.Queen import Queen
-from pages.Board import Board
 from widgets.informations.BoardDisplay import BoardDisplay
 from widgets.informations.TimerDisplay import TimerDisplay
 from widgets.informations.KillLogDisplay import KillLogDisplay
-from widgets.buttons.MenuButtonDisplay import MenuButtonDisplay
 from widgets.informations.GameOverDisplay import GameOverDisplay
+from widgets.buttons.MenuButtonDisplay import MenuButtonDisplay
 from features.decision.MCTS import MCTS, MCTSNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
 from styles.PieceImages import PieceImages
 from pages.Menu import Menu
+from pages.Board import Board
 
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
@@ -71,7 +71,7 @@ class Game:
                 
             if self.current_turn == 'black' or self.computer_vs_computer:
                 if self.play_with_computer or self.computer_vs_computer:
-                    self.computer_move()
+                    self.computer_decision()
                     self.turn_start_time = pygame.time.get_ticks()
 
             if self.is_game_over():
@@ -126,7 +126,7 @@ class Game:
         return False
     
 
-    def computer_move(self):
+    def computer_decision(self): # a
         state = self.board_to_numeric(self.board.board).flatten()
         reward = 0
         actions = [
@@ -193,7 +193,7 @@ class Game:
         next_state = self.board_to_numeric(self.board.board).flatten()
         self.update_policy_and_value_net(policy_net, value_net, optimizer, state, best_action, reward, next_state, gamma)
 
-    def evaluate_board(self):
+    def evaluate_board(self): # a
         piece_values = {
             King: 1000,
             Queen: 9,
@@ -214,7 +214,7 @@ class Game:
 
         return sum(scores)
 
-    def board_to_numeric(self, board):
+    def board_to_numeric(self, board): 
         numeric_board = np.zeros((8, 8), dtype=np.float32)
         for row in range(8):
             for col in range(8):
@@ -227,7 +227,7 @@ class Game:
                     numeric_board[row, col] = 1
         return numeric_board
 
-    def choose_action(self, state, actions, policy_net, value_net, epsilon=0.1):
+    def choose_action(self, state, actions, policy_net, value_net, epsilon=0.1): # a
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         
         with torch.no_grad():
@@ -252,7 +252,7 @@ class Game:
         else:
             return np.random.choice(len(actions), p=action_probabilities), value 
 
-    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, gamma):
+    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, gamma): # a
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
         action_tensor = torch.tensor([action], dtype=torch.int64)
@@ -277,3 +277,7 @@ class Game:
 
     def update_board(self, new_state):
         pass
+
+class Desision:
+  def __init__():
+    pass

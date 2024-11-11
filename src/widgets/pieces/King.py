@@ -6,7 +6,6 @@ from widgets.pieces.Piece import Piece
 class King(Piece):
     def __init__(self, color):
         super().__init__(color) 
-        
         self.has_moved = False
 
     def get_possible_moves(self, board, position):

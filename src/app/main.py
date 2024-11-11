@@ -7,7 +7,4 @@ from features.game.Game import Game
 
 if __name__ == "__main__":
     from pages.Menu import Menu
-    
-    game = Game()
-    game.play()
     Menu().run()

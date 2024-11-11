@@ -99,7 +99,7 @@ class Game:
     def handle_mousebuttondown(self):
         Menu().run()
         return
-      
+    
     def switch_turn(self):
         if self.current_turn == 'white':
             self.current_turn = 'black'

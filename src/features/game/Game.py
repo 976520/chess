@@ -21,7 +21,7 @@ from widgets.informations.TimerDisplay import TimerDisplay
 from widgets.informations.KillLogDisplay import KillLogDisplay
 from widgets.informations.GameOverDisplay import GameOverDisplay
 from widgets.buttons.MenuButtonDisplay import MenuButtonDisplay
-from features.decision.MCTS import MonteCarloTreeSearch, MonteCarloTreeSearchNode
+from src.features.decision.MonteCarloTreeSearch import MonteCarloTreeSearch, MonteCarloTreeSearchNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork

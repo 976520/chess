@@ -94,6 +94,12 @@ class Game:
             row, col = (mouse_y - 100) // 80, (mouse_x - 100) // 80
             if 0 <= row < 8 and 0 <= col < 8:
                 self.handle_board_click(row, col)
+                
+
+    def handle_keydown(self, event):
+        if event.key == pygame.K_ESCAPE:
+            menu = Menu()
+            menu.run()
 
     def switch_turn(self):
         self.current_turn = 'black' if self.current_turn == 'white' else 'white'

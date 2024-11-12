@@ -59,34 +59,23 @@ class Game:
         self.menu_button_display = MenuButtonDisplay(self.screen, self.menu_button)
 
     def play(self):
-        game_over = False
-        while not game_over:
-            self.handle_events()
+        while True:
             self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
             self.timer_display.display_timer(self.turn_start_time, self.current_turn, self.board)
-            self.menu_button_display.display_menu_button()
             self.kill_log_display.display_kill_log(self.kill_log)
-            pygame.display.flip()
-            self.clock.tick(30)
-                
-            if self.current_turn == 'black' or self.computer_vs_computer:
-                if self.play_with_computer or self.computer_vs_computer:
-                    self.computer_decision()
-                    self.turn_start_time = pygame.time.get_ticks()
+            self.menu_button_display.display_menu_button()
 
-            if self.is_game_over():
-                self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
-                pygame.display.flip()
-                self.game_over_display.display_game_over(self.board, self.current_turn)
-                game_over = True
-
-        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    return
+                elif event.type == pygame.MOUSEBUTTONDOWN:
+                    self.handle_mousebuttondown()
+                elif event.type == pygame.KEYDOWN:
+                    self.handle_keydown(event)
+
+            pygame.display.flip()
+            self.clock.tick(30)
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -97,9 +86,15 @@ class Game:
                 self.handle_mousebuttondown()
 
     def handle_mousebuttondown(self):
-        Menu().run()
-        return
-    
+        mouse_x, mouse_y = pygame.mouse.get_pos()
+        if 900 <= mouse_x <= 980 and 20 <= mouse_y <= 100:
+            menu = Menu()
+            menu.run()
+        else:
+            row, col = (mouse_y - 100) // 80, (mouse_x - 100) // 80
+            if 0 <= row < 8 and 0 <= col < 8:
+                self.handle_board_click(row, col)
+
     def switch_turn(self):
         self.current_turn = 'black' if self.current_turn == 'white' else 'white'
             

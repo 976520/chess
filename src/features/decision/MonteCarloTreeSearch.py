@@ -1,6 +1,5 @@
 import numpy as np
 import torch
-from mctx import mcts, SearchParams, PolicyOutput
 
 class MonteCarloTreeSearchNode:
     def __init__(self, state, parent=None, action=None):

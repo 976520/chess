@@ -95,7 +95,9 @@ class Game:
             if 0 <= row < 8 and 0 <= col < 8:
                 self.handle_board_click(row, col)
                 
-
+    def handle_board_click(self, row, col):
+        pass
+    
     def handle_keydown(self, event):
         if event.key == pygame.K_ESCAPE:
             menu = Menu()

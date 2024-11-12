@@ -101,10 +101,7 @@ class Game:
         return
     
     def switch_turn(self):
-        if self.current_turn == 'white':
-            self.current_turn = 'black'
-        elif self.current_turn == 'black':
-            self.current_turn = 'white'
+        self.current_turn = 'black' if self.current_turn == 'white' else 'white'
             
         pygame.display.set_caption(f"{self.current_turn.capitalize()} turn")
 
@@ -115,13 +112,13 @@ class Game:
 
     def is_game_over(self):
         if self.board.is_checkmate(self.current_turn):
-            self.board.display_game_over(self.current_turn)
+            self.game_over_display.display_game_over(self.board, self.current_turn)
             return True
         elif self.board.is_stalemate(self.current_turn):
-            self.board.display_game_over(self.current_turn)
+            self.game_over_display.display_game_over(self.board, self.current_turn)
             return True
         elif not self.board.king_exists(self.current_turn):
-            self.board.display_game_over(self.current_turn)
+            self.game_over_display.display_game_over(self.board, self.current_turn)
             return True
         return False
     
@@ -144,7 +141,7 @@ class Game:
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 4
+        simulation_count = 1
 
         mcts = MCTS(policy_net, value_net)
         root = MCTSNode(state)

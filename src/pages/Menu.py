@@ -70,7 +70,7 @@ class Menu:
                 self.execute_selected_option()
 
     def execute_selected_option(self):
-        from app.main import Game
+        from features.game.Game import Game
 
         if self.selected_option == 0:
             game = Game()

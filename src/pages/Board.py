@@ -59,7 +59,7 @@ class Board:
             if end_pos in possible_moves:
                 target_piece = self.board[end_pos[0], end_pos[1]]
                 if isinstance(target_piece, King):
-                    self.game_over_display.display_game_over(self, piece.color)
+                    self.display_game_over(self.get_turn())
                     return
 
                 if isinstance(piece, King):
@@ -180,3 +180,6 @@ class Board:
                         self.board[i, j] = piece
                         self.board[move[0], move[1]] = original_piece
         return True
+
+    def display_game_over(self, current_turn):
+        self.game_over_display.display_game_over(self, current_turn)

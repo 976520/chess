@@ -105,9 +105,7 @@ class Game:
 
     def switch_turn(self):
         self.current_turn = 'black' if self.current_turn == 'white' else 'white'
-            
         pygame.display.set_caption(f"{self.current_turn.capitalize()} turn")
-
         for row in self.board.board:
             for piece in row:
                 if isinstance(piece, Pawn):

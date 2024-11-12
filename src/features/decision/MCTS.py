@@ -2,7 +2,7 @@ import numpy as np
 import torch
 from mctx import mcts, SearchParams, PolicyOutput
 
-class MCTSNode:
+class MonteCarloTreeSearchNode:
     def __init__(self, state, parent=None, action=None):
         self.state = state
         self.parent = parent
@@ -18,7 +18,7 @@ class MCTSNode:
     def expand(self, actions, priors):
         for action, prior in zip(actions, priors):
             next_state = self.get_next_state(self.state, action)
-            child = MCTSNode(next_state, parent=self, action=action)
+            child = MonteCarloTreeSearchNode(next_state, parent=self, action=action)
             child.prior = prior
             self.children.append(child)
 
@@ -34,7 +34,7 @@ class MCTSNode:
         self.visits += 1
         self.value += (value - self.value) / self.visits
 
-class MCTS:
+class MonteCarloTreeSearch:
     def __init__(self, policy_net, value_net, num_simulations=800):
         self.policy_net = policy_net
         self.value_net = value_net
@@ -48,7 +48,7 @@ class MCTS:
         return policy.numpy(), value
 
     def search(self, root_state, legal_actions):
-        root = MCTSNode(root_state)
+        root = MonteCarloTreeSearchNode(root_state)
         
         policy, value = self.get_policy_value(root_state)
         root.expand(legal_actions, policy)
@@ -91,3 +91,5 @@ class MCTS:
                 value = -value 
         
         return max(root.children, key=lambda c: c.visits).action
+    
+    

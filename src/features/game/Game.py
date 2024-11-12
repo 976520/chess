@@ -21,7 +21,7 @@ from widgets.informations.TimerDisplay import TimerDisplay
 from widgets.informations.KillLogDisplay import KillLogDisplay
 from widgets.informations.GameOverDisplay import GameOverDisplay
 from widgets.buttons.MenuButtonDisplay import MenuButtonDisplay
-from features.decision.MCTS import MCTS, MCTSNode
+from features.decision.MCTS import MonteCarloTreeSearch, MonteCarloTreeSearchNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
@@ -143,8 +143,8 @@ class Game:
         gamma = 0.99
         simulation_count = 1
 
-        mcts = MCTS(policy_net, value_net)
-        root = MCTSNode(state)
+        mcts = MonteCarloTreeSearch(policy_net, value_net)
+        root = MonteCarloTreeSearchNode(state)
         root.expand(actions)
 
         def run_simulation(root, actions):

@@ -208,7 +208,11 @@ class Game:
             return 0
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            scores = executor.map(evaluate_piece, [piece for row in self.board.board for piece in row])
+            pieces = []
+            for row in self.board.board:
+                for piece in row:
+                    pieces.append(piece)
+            scores = executor.map(evaluate_piece, pieces)
 
         return sum(scores)
 
@@ -265,7 +269,9 @@ class Game:
         policy = policy_net(state_tensor).squeeze(0)
         value = value_net(state_tensor).item()
         action_probability = policy[action_tensor]
+        
         advantage = reward_tensor + gamma * next_value - value
+        
         policy_loss = (-torch.log(action_probability) * advantage).mean()
         value_loss = advantage.pow(2).mean()
 

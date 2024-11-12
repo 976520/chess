@@ -275,9 +275,4 @@ class Game:
         (policy_loss + value_loss).backward()
         optimizer.step()
 
-    def update_board(self, new_state):
-        pass
 
-class Desision:
-  def __init__():
-    pass

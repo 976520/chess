@@ -57,8 +57,13 @@ class MonteCarloTreeSearch:
             value = self.get_policy_value(node.state)[1]
             for node in reversed(search_path):
                 node.update(value)
-                value = -value 
+                value = -value  
         
-        return max(root.children, key=lambda c: c.visits).action
+        best_child = root.children[0]
+        for child in root.children:
+            if child.visits > best_child.visits:
+                best_child = child
+    
+        return best_child.action
     
     

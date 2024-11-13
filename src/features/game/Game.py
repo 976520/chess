@@ -186,7 +186,7 @@ class Game:
                 while not node.is_leaf():
                     node = mcts.best_child(node)
                 if node.visits > 0:
-                    node.expand(actions, priors)
+                    node.expand(actions, )
                 self.reward = self.evaluate_board()
                 while node:
                     node.update(reward)

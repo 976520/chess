@@ -96,7 +96,34 @@ class Game:
                 self.handle_board_click(row, col)
                 
     def handle_board_click(self, row, col):
-        pass
+        if self.selected_piece:
+            start_pos = self.selected_position
+            end_pos = (row, col)
+            if start_pos == end_pos:
+                self.selected_piece = None
+                self.selected_position = None
+            else:
+                self.board.move_piece(start_pos, end_pos)
+                self.selected_piece = None
+                self.selected_position = None
+                self.switch_turn()
+                self.turn_start_time = pygame.time.get_ticks()
+
+                if self.is_game_over():
+                    return
+
+                if self.play_with_computer and self.current_turn == 'black':
+                    self.computer_decision()
+                elif self.computer_vs_computer:
+                    while True:
+                        self.computer_decision()
+                        if self.is_game_over():
+                            return
+        else:
+            piece = self.board.board[row, col]
+            if piece and piece.color == self.current_turn:
+                self.selected_piece = piece
+                self.selected_position = (row, col)
     
     def handle_keydown(self, event):
         if event.key == pygame.K_ESCAPE:
@@ -124,7 +151,7 @@ class Game:
         return False
     
 
-    def computer_decision(self): # a
+    def computer_decision(self):
         state = self.board_to_numeric(self.board.board).flatten()
         reward = 0
         actions = [
@@ -146,7 +173,12 @@ class Game:
 
         mcts = MonteCarloTreeSearch(policy_net, value_net)
         root = MonteCarloTreeSearchNode(state)
-        root.expand(actions)
+
+        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        with torch.no_grad():
+            priors = policy_net(state_tensor).squeeze(0).numpy()
+
+        root.expand(actions, priors)
 
         def run_simulation(root, actions):
             for _ in range(simulation_count):
@@ -154,7 +186,7 @@ class Game:
                 while not node.is_leaf():
                     node = mcts.best_child(node)
                 if node.visits > 0:
-                    node.expand(actions)
+                    node.expand(actions, priors)
                 self.reward = self.evaluate_board()
                 while node:
                     node.update(reward)

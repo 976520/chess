@@ -1,5 +1,5 @@
 import numpy as np
-from widgets.pieces.Piece import Piece
+from widgets.pieces.__init__ import Piece
 
 class Rook(Piece):
     def __init__(self, color):

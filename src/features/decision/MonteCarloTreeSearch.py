@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from MonteCarloTreeSearchNode import MonteCarloTreeSearchNode
+from features.decision.MonteCarloTreeSearchNode import MonteCarloTreeSearchNode
 
 class MonteCarloTreeSearch:
     def __init__(self, policy_net, value_net, num_simulations=800):

@@ -214,7 +214,7 @@ class Game:
 
         self.board.computer_move_start = (start_row, start_col)
         self.board.computer_move_end = move
-        self.board.draw_computer_move(start_row, start_col, move) 
+        self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
 
         torch.save(policy_net.state_dict(), 'policy_net.pth')
         torch.save(value_net.state_dict(), 'value_net.pth')

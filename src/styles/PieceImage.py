@@ -1,8 +1,8 @@
 import pygame
 
-class PieceImages:
+class PieceImage:
     @staticmethod
-    def load_images():
+    def load_image():
         return {
             'Pawn_b': pygame.transform.scale(pygame.image.load("assets/images/Pieces_b/Pawn_b.png").convert_alpha(), (80, 80)),
             'Pawn_w': pygame.transform.scale(pygame.image.load("assets/images/Pieces_w/Pawn_w.png").convert_alpha(), (80, 80)),

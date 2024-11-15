@@ -26,7 +26,8 @@ from features.decision.MonteCarloTreeSearchNode import MonteCarloTreeSearchNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
-from styles.PieceImages import PieceImages
+from src.styles.PieceImage import PieceImage
+from styles.BackgroundImage import BackgroundImage
 from pages.Menu import Menu
 from pages.Board import Board
 
@@ -34,9 +35,9 @@ class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
         pygame.init()
         self.screen = pygame.display.set_mode((1000, 1000))
-        self.background = pygame.image.load("assets/Background.png").convert()
+        self.background = BackgroundImage.load_image()
         self.background = pygame.transform.scale(self.background, (640, 640))  
-        self.piece_images = PieceImages.load_images()
+        self.piece_images = PieceImage.load_image()
         self.board_display = BoardDisplay(self.screen, self.background, self.piece_images)
         self.board = Board(self.screen, self.background, self.board_display)
         self.current_turn = 'white'

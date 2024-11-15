@@ -55,8 +55,8 @@ class Pawn(Piece):
         return moves
 
     def promote(self, board, position):
-        is_white_promotion = self.color == 'white' and position[0] == 0
-        is_black_promotion = self.color == 'black' and position[0] == 7
+        is_white_promotion = (self.color == 'white' and position[0] == 0)
+        is_black_promotion = (self.color == 'black' and position[0] == 7)
         
         if is_white_promotion or is_black_promotion:
             board[position[0], position[1]] = Queen(self.color)

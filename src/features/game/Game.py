@@ -122,7 +122,7 @@ class Game:
                 if self.is_game_over():
                     return
 
-                if self.play_with_computer
+                if self.play_with_computer:
                     if self.current_turn == 'black':
                         self.computer_decision()
                 elif self.computer_vs_computer:
@@ -175,12 +175,11 @@ class Game:
 
         if not actions:
             return
-
         policy_net = PolicyNetwork(len(actions))
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 1
+        simulation_count = 3
 
         mcts = MonteCarloTreeSearch(policy_net, value_net)
         root = MonteCarloTreeSearchNode(state)
@@ -204,7 +203,9 @@ class Game:
                     node = node.parent
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = [executor.submit(run_simulation, root, actions) for _ in range(simulation_count)]
+            futures = []
+            for _ in range(simulation_count):
+                futures.append(executor.submit(run_simulation, root, actions))
             concurrent.futures.wait(futures)
 
         best_action = mcts.best_action(root)

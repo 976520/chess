@@ -7,7 +7,6 @@ class GameOverDisplay:
         self.screen = screen
 
     def display_game_over(self, board, current_turn):
-        print("displaygameover호출됨")
         font_title = pygame.font.SysFont(None, 74)
         font_subtitle = pygame.font.SysFont(None, 50)
         

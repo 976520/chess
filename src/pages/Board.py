@@ -100,6 +100,21 @@ class Board:
                 if isinstance(piece, Pawn) and (end_pos[0] == 0 or end_pos[0] == 7):
                     piece.promote(self.board, end_pos)
 
+    def computer_move_piece(self, start_pos, end_pos):
+        piece = self.board[start_pos[0], start_pos[1]]
+        if piece:
+            self.board[end_pos[0], end_pos[1]] = piece
+            self.board[start_pos[0], start_pos[1]] = None
+            
+            self.last_move_start = start_pos
+            self.last_move_end = end_pos
+            self.last_move_turn = self.get_turn_count()
+            
+            piece.has_moved = True
+            
+            if isinstance(piece, Pawn) and (end_pos[0] == 0 or end_pos[0] == 7):
+                piece.promote(self.board, end_pos)
+
     def get_turn(self):
         return 'white' if self.screen.get_at((0, 0)) == (255, 255, 255) else 'black'
 

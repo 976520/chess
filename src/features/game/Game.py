@@ -205,7 +205,7 @@ class Game:
         if self.board.board[move[0], move[1]]:
             self.kill_log.append((self.board.board[start_row, start_col], self.board.board[move[0], move[1]]))
 
-        self.board.move_piece((start_row, start_col), move)
+        self.board.computer_move_piece((start_row, start_col), move)
         self.switch_turn()
         self.turn_start_time = pygame.time.get_ticks()
 

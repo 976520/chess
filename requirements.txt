@@ -2,3 +2,4 @@ pygame
 numpy
 torch
 websockets
+pydub

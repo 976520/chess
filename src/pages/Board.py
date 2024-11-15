@@ -124,8 +124,9 @@ class Board:
     def king_exists(self, color):
         for row in self.board:
             for piece in row:
-                if isinstance(piece, King) and piece.color == color:
-                    return True
+                if isinstance(piece, King):
+                    if piece.color == color:
+                        return True
         return False
 
     def is_in_check(self, color):
@@ -182,18 +183,19 @@ class Board:
         for i in range(8):
             for j in range(8):
                 piece = self.board[i, j]
-                if piece and piece.color == color:
-                    possible_moves = piece.get_possible_moves(self.board, (i, j))
-                    for move in possible_moves:
-                        original_piece = self.board[move[0], move[1]]
-                        self.board[move[0], move[1]] = piece
-                        self.board[i, j] = None
-                        if not self.is_in_check(color):
+                if piece:
+                    if piece.color == color:
+                        possible_moves = piece.get_possible_moves(self.board, (i, j))
+                        for move in possible_moves:
+                            original_piece = self.board[move[0], move[1]]
+                            self.board[move[0], move[1]] = piece
+                            self.board[i, j] = None
+                            if not self.is_in_check(color):
+                                self.board[i, j] = piece
+                                self.board[move[0], move[1]] = original_piece
+                                return False
                             self.board[i, j] = piece
                             self.board[move[0], move[1]] = original_piece
-                            return False
-                        self.board[i, j] = piece
-                        self.board[move[0], move[1]] = original_piece
         return True
 
     def display_game_over(self, current_turn):

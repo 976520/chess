@@ -9,6 +9,8 @@ import torch
 import torch.optim as optim
 import pickle
 import concurrent.futures
+from pydub import AudioSegment
+from pydub.playback import play
 
 from widgets.pieces.King import King
 from widgets.pieces.Rook import Rook
@@ -31,9 +33,11 @@ from styles.BackgroundImage import BackgroundImage
 from pages.Menu import Menu
 from pages.Board import Board
 
+
 class Game:
     def __init__(self, play_with_computer=False, computer_vs_computer=False):
         pygame.init()
+        pygame.mixer.init()
         self.screen = pygame.display.set_mode((1000, 1000))
         self.background = BackgroundImage.load_image()
         self.background = pygame.transform.scale(self.background, (640, 640))  
@@ -106,6 +110,10 @@ class Game:
                 self.selected_position = None
             else:
                 self.board.move_piece(start_pos, end_pos)
+                
+                move_sound = pygame.mixer.Sound("../../assets/sounds/Move.wav")
+                move_sound.play()
+                
                 self.selected_piece = None
                 self.selected_position = None
                 self.switch_turn()
@@ -114,8 +122,9 @@ class Game:
                 if self.is_game_over():
                     return
 
-                if self.play_with_computer and self.current_turn == 'black':
-                    self.computer_decision()
+                if self.play_with_computer
+                    if self.current_turn == 'black':
+                        self.computer_decision()
                 elif self.computer_vs_computer:
                     while True:
                         self.computer_decision()

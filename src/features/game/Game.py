@@ -26,7 +26,7 @@ from features.decision.MonteCarloTreeSearchNode import MonteCarloTreeSearchNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
-from src.styles.PieceImage import PieceImage
+from styles.PieceImage import PieceImage
 from styles.BackgroundImage import BackgroundImage
 from pages.Menu import Menu
 from pages.Board import Board
@@ -53,7 +53,7 @@ class Game:
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
 
-        self.menu_button = pygame.image.load("assets/Buttons/Menu.png").convert_alpha()
+        self.menu_button = pygame.image.load("assets/images/Buttons/Menu.png").convert_alpha()
         self.menu_button = pygame.transform.scale(self.menu_button, (50, 50))
 
         self.timer_display = TimerDisplay(self.screen, self.turn_time_limit)

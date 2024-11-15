@@ -24,6 +24,8 @@ class Pawn(Piece):
 
         if position[0] == start_row:
             new_pos = position + np.array([2 * direction, 0])
+            
+            
             if 0 <= new_pos[0] < 8:
                 if board[new_pos[0], new_pos[1]] is None: 
                     if board[position[0] + direction, position[1]] is None:

@@ -298,7 +298,7 @@ class Game:
         else:
             return np.random.choice(len(actions), p=action_probabilities), value 
 
-    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, gamma): # a
+    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, gamma, alpha):
         state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
         next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
         action_tensor = torch.tensor([action], dtype=torch.int64)
@@ -308,19 +308,22 @@ class Game:
             next_policy = policy_net(next_state_tensor).squeeze(0)
             next_value = value_net(next_state_tensor).item()
             next_action_probabilities = next_policy / torch.sum(next_policy)
-            next_value = torch.sum(next_action_probabilities * next_value)
+            next_q_value = torch.sum(next_action_probabilities * next_value)
 
         policy = policy_net(state_tensor).squeeze(0)
         value = value_net(state_tensor).item()
         action_probability = policy[action_tensor]
         
-        advantage = reward_tensor + gamma * next_value - value
-        
-        policy_loss = (-torch.log(action_probability) * advantage).mean()
-        value_loss = advantage.pow(2).mean()
+        q_value = reward_tensor + gamma * next_q_value
+        td_error = q_value - value
+
+        policy_loss = (-torch.log(action_probability) * td_error).mean()
+        value_loss = td_error.pow(2).mean()
 
         optimizer.zero_grad()
         (policy_loss + value_loss).backward()
         optimizer.step()
+
+        value_net.load_state_dict(value_net.state_dict() * (1 - alpha) + value.item() * alpha)
 
 

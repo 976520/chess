@@ -1,5 +1,9 @@
 import pygame
 import numpy as np
+import os 
+import sys
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from widgets.pieces.King import King
 from widgets.pieces.Rook import Rook

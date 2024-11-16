@@ -74,11 +74,13 @@ class BoardDisplay:
             for row in range(8):
                 for col in range(8):
                     piece = board.board[row, col]
-                    if piece and (piece.color != current_turn):
+                    if piece and(piece.color != current_turn):
                         possible_moves = piece.get_possible_moves(board.board, (row, col))
                         if possible_moves:
                             if king_position in possible_moves:
                                 pygame.draw.rect(self.screen, (255, 0, 0), pygame.Rect(col * 80 + 100, row * 80 + 100, 80, 80), 3)
+                                
+                                pygame.mixer.Sound("assets/sounds/Check.wav").play()
 
     def highlight_last_move(self, board):
         if board.last_move_start and board.last_move_end:

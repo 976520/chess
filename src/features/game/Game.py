@@ -171,11 +171,12 @@ class Game:
 
 
 class Decision:
-    def __init__(self, board, current_turn, kill_log, replay_buffer):
+    def __init__(self, board, current_turn, kill_log, replay_buffer, alpha=0.01):
         self.board = board
         self.current_turn = current_turn
         self.kill_log = kill_log
         self.replay_buffer = replay_buffer
+        self.alpha = alpha
 
     def computer_decision(self):
         state = self.board_to_numeric(self.board.board).flatten()
@@ -196,7 +197,7 @@ class Decision:
         value_net = ValueNetwork()
         optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
         gamma = 0.99
-        simulation_count = 3
+        simulation_count = 4
 
         mcts = MonteCarloTreeSearch(policy_net, value_net)
         root = MonteCarloTreeSearchNode(state)
@@ -248,7 +249,7 @@ class Decision:
             pickle.dump(self.replay_buffer, f)
         
         next_state = self.board_to_numeric(self.board.board).flatten()
-        self.update_policy_and_value_net(policy_net, value_net, optimizer, state, best_action, reward, next_state, gamma)
+        self.update_policy_and_value_net(policy_net, value_net, optimizer, state, best_action, reward, next_state, gamma, self.alpha)
 
     def evaluate_board(self): # a
         piece_values = {
@@ -339,4 +340,5 @@ class Decision:
         (policy_loss + value_loss).backward()
         optimizer.step()
 
-        value_net.load_state_dict(value_net.state_dict() * (1 - alpha) + value.item() * alpha)
+        for param in value_net.parameters():
+            param.data.mul_(1 - alpha).add_(value * alpha)

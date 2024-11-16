@@ -165,13 +165,15 @@ class Game:
     def computer_decision(self):
         state = self.board_to_numeric(self.board.board).flatten()
         reward = 0
-        actions = [
-            ((row, col), move)
-            for row in range(8)
-            for col in range(8)
-            if (piece := self.board.board[row, col]) and piece.color == self.current_turn
-            for move in piece.get_possible_moves(self.board.board, (row, col))
-        ]
+        actions = []
+        for row in range(8):
+            for col in range(8):
+                piece = self.board.board[row, col]
+                if piece:
+                    if piece.color == self.current_turn:
+                        possible_moves = piece.get_possible_moves(self.board.board, (row, col))
+                        for move in possible_moves:
+                            actions.append(((row, col), move))
 
         if not actions:
             return

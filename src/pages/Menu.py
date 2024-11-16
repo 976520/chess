@@ -31,8 +31,10 @@ class Menu:
             self.screen.blit(self.title_text, self.title_rect)
             for i, option in enumerate(self.options):
                 self.screen.blit(option, self.option_rects[i].topleft)
-                if i == self.selected_option and self.blink:
-                    pygame.draw.rect(self.screen, (0, 255, 0), self.option_rects[i], 5)
+                if i == self.selected_option:
+                    if self.blink:
+                        pygame.draw.rect(self.screen, (0, 255, 0), self.option_rects[i], 5)
+                    
                 text_surface = pygame.font.SysFont(None, 26).render(self.option_texts[i], True, (255, 255, 255))
                 text_rect = text_surface.get_rect(center=(self.option_rects[i].centerx, self.option_rects[i].bottom + 30))
                 self.screen.blit(text_surface, text_rect)

@@ -130,6 +130,8 @@ class BoardDisplay:
         for row in range(8):
             for col in range(8):
                 piece = board.board[row, col]
-                if piece and isinstance(piece, King) and piece.color == current_turn:
-                    return (row, col)
+                if piece:
+                    if isinstance(piece, King):
+                        if piece.color == current_turn:
+                            return (row, col)
         return None

@@ -43,6 +43,7 @@ class GameOverDisplay:
     def king_exists(self, board, color):
         for row in board.board:
             for piece in row:
-                if isinstance(piece, King) and piece.color == color:
-                    return True
+                if isinstance(piece, King):
+                    if piece.color == color:
+                        return True
         return False

@@ -23,89 +23,89 @@ from features.decision.ValueNetwork import ValueNetwork
 
 
 class Decision:
-    def __init__(self, board, current_turn, kill_log, replay_buffer, alpha=0.01):
-        self.board = board
-        self.current_turn = current_turn
-        self.kill_log = kill_log
-        self.replay_buffer = replay_buffer
-        self.alpha = alpha  
-        self.replay_buffer = ReplayBuffer(10000)
+    def __init__(self, chess_board, current_turn_color, captured_pieces_log, replay_memory_buffer, learning_rate_alpha=0.01):
+        self.chess_board = chess_board
+        self.current_turn_color = current_turn_color
+        self.captured_pieces_log = captured_pieces_log
+        self.replay_memory_buffer = replay_memory_buffer
+        self.learning_rate_alpha = learning_rate_alpha  
+        self.replay_memory_buffer = ReplayBuffer(10000)
 
-    def computer_decision(self):
-        state = self.board_to_numeric(self.board.board).flatten()
-        reward = 0
-        actions = []
-        for row in range(8):
-            for col in range(8):
-                piece = self.board.board[row, col]
-                if piece:
-                    if piece.color == self.current_turn:
-                        possible_moves = piece.get_possible_moves(self.board.board, (row, col))
-                        for move in possible_moves:
-                            actions.append(((row, col), move))
+    def make_computer_decision(self):
+        current_state = self.convert_board_to_numeric(self.chess_board.board).flatten()
+        immediate_reward = 0
+        possible_actions = []
+        for row_index in range(8):
+            for column_index in range(8):
+                chess_piece = self.chess_board.board[row_index, column_index]
+                if chess_piece:
+                    if chess_piece.color == self.current_turn_color:
+                        potential_moves = chess_piece.get_possible_moves(self.chess_board.board, (row_index, column_index))
+                        for move in potential_moves:
+                            possible_actions.append(((row_index, column_index), move))
 
-        if not actions:
+        if not possible_actions:
             return
-        policy_net = PolicyNetwork(len(actions))
-        value_net = ValueNetwork()
-        optimizer = optim.Adam(list(policy_net.parameters()) + list(value_net.parameters()), lr=0.0001)
-        gamma = 0.99
-        simulation_count = 4
+        policy_network = PolicyNetwork(len(possible_actions))
+        value_network = ValueNetwork()
+        adam_optimizer = optim.Adam(list(policy_network.parameters()) + list(value_network.parameters()), lr=0.0001)
+        discount_factor_gamma = 0.99
+        number_of_simulations = 4
 
-        mcts = MonteCarloTreeSearch(policy_net, value_net)
-        root = MonteCarloTreeSearchNode(state)
+        monte_carlo_tree_search = MonteCarloTreeSearch(policy_network, value_network)
+        root_node = MonteCarloTreeSearchNode(current_state)
 
-        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+        current_state_tensor = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
         with torch.no_grad():
-            priors = policy_net(state_tensor).squeeze(0).numpy()
+            action_priors = policy_network(current_state_tensor).squeeze(0).numpy()
 
-        root.expand(actions, priors)
+        root_node.expand(possible_actions, action_priors)
 
-        def run_simulation(root, actions):
-            for _ in range(simulation_count):
-                node = root
-                while not node.is_leaf():
-                    node = mcts.best_child(node)
-                if node.visits > 0:
-                    node.expand(actions, )
-                self.reward = self.evaluate_board()
-                while node:
-                    node.update(reward)
-                    node = node.parent
+        def execute_simulation(root_node, possible_actions):
+            for _ in range(number_of_simulations):
+                current_node = root_node
+                while not current_node.is_leaf():
+                    current_node = monte_carlo_tree_search.best_child(current_node)
+                if current_node.visits > 0:
+                    current_node.expand(possible_actions, )
+                self.immediate_reward = self.evaluate_chess_board()
+                while current_node:
+                    current_node.update(immediate_reward)
+                    current_node = current_node.parent
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            futures = []
-            for _ in range(simulation_count):
-                futures.append(executor.submit(run_simulation, root, actions))
-            concurrent.futures.wait(futures)
+        with concurrent.futures.ThreadPoolExecutor() as thread_executor:
+            future_simulations = []
+            for _ in range(number_of_simulations):
+                future_simulations.append(thread_executor.submit(execute_simulation, root_node, possible_actions))
+            concurrent.futures.wait(future_simulations)
 
-        best_action = mcts.best_action(root)
-        if not best_action:
+        optimal_action = monte_carlo_tree_search.best_action(root_node)
+        if not optimal_action:
             return
 
-        (start_row, start_col), move = best_action
-        if self.board.board[move[0], move[1]]:
-            self.kill_log.append((self.board.board[start_row, start_col], self.board.board[move[0], move[1]]))
+        (start_row_index, start_column_index), move = optimal_action
+        if self.chess_board.board[move[0], move[1]]:
+            self.captured_pieces_log.append((self.chess_board.board[start_row_index, start_column_index], self.chess_board.board[move[0], move[1]]))
 
-        self.board.computer_move_piece((start_row, start_col), move)
+        self.chess_board.computer_move_piece((start_row_index, start_column_index), move)
 
-        if isinstance(self.board.board[move[0], move[1]], Pawn):
+        if isinstance(self.chess_board.board[move[0], move[1]], Pawn):
             if move[0] in {0, 7}:
-                self.board.board[move[0], move[1]].promote(self.board.board, move)
+                self.chess_board.board[move[0], move[1]].promote(self.chess_board.board, move)
 
-        self.board.computer_move_start = (start_row, start_col)
-        self.board.computer_move_end = move
+        self.chess_board.computer_move_start = (start_row_index, start_column_index)
+        self.chess_board.computer_move_end = move
 
-        torch.save(policy_net.state_dict(), 'policy_net.pth')
-        torch.save(value_net.state_dict(), 'value_net.pth')
-        with open('replay_buffer.pkl', 'wb') as f:
-            pickle.dump(self.replay_buffer, f)
+        torch.save(policy_network.state_dict(), 'policy_network.pth')
+        torch.save(value_network.state_dict(), 'value_network.pth')
+        with open('replay_memory_buffer.pkl', 'wb') as replay_buffer_file:
+            pickle.dump(self.replay_memory_buffer, replay_buffer_file)
         
-        next_state = self.board_to_numeric(self.board.board).flatten()
-        self.update_policy_and_value_net(policy_net, value_net, optimizer, state, best_action, reward, next_state, gamma, self.alpha)
+        next_state = self.convert_board_to_numeric(self.chess_board.board).flatten()
+        self.update_policy_and_value_network(policy_network, value_network, adam_optimizer, current_state, optimal_action, immediate_reward, next_state, discount_factor_gamma, self.learning_rate_alpha)
 
-    def evaluate_board(self): # a
-        piece_values = {
+    def evaluate_chess_board(self): 
+        piece_value_mapping = {
             King: 1000,
             Queen: 9,
             Rook: 5,
@@ -114,84 +114,84 @@ class Decision:
             Pawn: 1
         }
 
-        def evaluate_piece(piece):
-            if piece:
-                value = piece_values[type(piece)]
-                return value if piece.color == 'black' else -value
+        def evaluate_individual_piece(chess_piece):
+            if chess_piece:
+                piece_value = piece_value_mapping[type(chess_piece)]
+                return piece_value if chess_piece.color == 'black' else -piece_value
             return 0
 
-        with concurrent.futures.ThreadPoolExecutor() as executor:
-            pieces = []
-            for row in self.board.board:
-                for piece in row:
-                    pieces.append(piece)
-            scores = executor.map(evaluate_piece, pieces)
+        with concurrent.futures.ThreadPoolExecutor() as thread_executor:
+            all_pieces = []
+            for row in self.chess_board.board:
+                for chess_piece in row:
+                    all_pieces.append(chess_piece)
+            piece_scores = thread_executor.map(evaluate_individual_piece, all_pieces)
 
-        return sum(scores)
+        return sum(piece_scores)
 
-    def board_to_numeric(self, board): 
-        numeric_board = np.zeros((8, 8), dtype=np.float32)
-        for row in range(8):
-            for col in range(8):
-                piece = board[row, col]
-                if piece is None:
-                    numeric_board[row, col] = 0
-                elif piece.color == 'black':
-                    numeric_board[row, col] = -1
+    def convert_board_to_numeric(self, chess_board): 
+        numeric_chess_board = np.zeros((8, 8), dtype=np.float32)
+        for row_index in range(8):
+            for column_index in range(8):
+                chess_piece = chess_board[row_index, column_index]
+                if chess_piece is None:
+                    numeric_chess_board[row_index, column_index] = 0
+                elif chess_piece.color == 'black':
+                    numeric_chess_board[row_index, column_index] = -1
                 else:
-                    numeric_board[row, col] = 1
-        return numeric_board
+                    numeric_chess_board[row_index, column_index] = 1
+        return numeric_chess_board
 
-    def choose_action(self, state, actions, policy_net, value_net, epsilon=0.1): # a
-        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+    def select_action(self, current_state, possible_actions, policy_network, value_network, exploration_epsilon=0.1): 
+        current_state_tensor = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
         
         with torch.no_grad():
-            policy = policy_net(state_tensor).squeeze(0).numpy()
-            value = value_net(state_tensor).item()
+            action_policy = policy_network(current_state_tensor).squeeze(0).numpy()
+            state_value = value_network(current_state_tensor).item()
 
-        action_probabilities = np.zeros(len(actions))
+        action_probabilities = np.zeros(len(possible_actions))
 
-        if len(policy) == len(actions):
-            action_probabilities = np.exp(policy) / np.sum(np.exp(policy)) 
+        if len(action_policy) == len(possible_actions):
+            action_probabilities = np.exp(action_policy) / np.sum(np.exp(action_policy)) 
         else:
-            for idx, action in enumerate(actions):
-                action_probabilities[idx] = policy[actions.index(action)]
+            for action_index, action in enumerate(possible_actions):
+                action_probabilities[action_index] = action_policy[possible_actions.index(action)]
 
             if np.sum(action_probabilities) > 0:
                 action_probabilities /= np.sum(action_probabilities)
             else:
-                action_probabilities = np.ones(len(actions)) / len(actions)  
+                action_probabilities = np.ones(len(possible_actions)) / len(possible_actions)  
 
-        if np.random.rand() < epsilon:
-            return np.random.choice(len(actions)), None  
+        if np.random.rand() < exploration_epsilon:
+            return np.random.choice(len(possible_actions)), None  
         else:
-            return np.random.choice(len(actions), p=action_probabilities), value 
+            return np.random.choice(len(possible_actions), p=action_probabilities), state_value 
 
-    def update_policy_and_value_net(self, policy_net, value_net, optimizer, state, action, reward, next_state, gamma, alpha):
-        state_tensor = torch.tensor(state, dtype=torch.float32).unsqueeze(0)
+    def update_policy_and_value_network(self, policy_network, value_network, adam_optimizer, current_state, selected_action, immediate_reward, next_state, discount_factor_gamma, learning_rate_alpha):
+        current_state_tensor = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
         next_state_tensor = torch.tensor(next_state, dtype=torch.float32).unsqueeze(0)
-        action_tensor = torch.tensor([action], dtype=torch.int64)
-        reward_tensor = torch.tensor([reward], dtype=torch.float32)
+        selected_action_tensor = torch.tensor([selected_action], dtype=torch.int64)
+        immediate_reward_tensor = torch.tensor([immediate_reward], dtype=torch.float32)
 
         with torch.no_grad():
-            next_policy = policy_net(next_state_tensor).squeeze(0)
-            next_value = value_net(next_state_tensor).item()
-            next_action_probabilities = next_policy / torch.sum(next_policy)
-            next_q_value = torch.sum(next_action_probabilities * next_value)
+            next_action_policy = policy_network(next_state_tensor).squeeze(0)
+            next_state_value = value_network(next_state_tensor).item()
+            next_action_probabilities = next_action_policy / torch.sum(next_action_policy)
+            next_q_value = torch.sum(next_action_probabilities * next_state_value)
 
-        policy = policy_net(state_tensor).squeeze(0)
-        value = value_net(state_tensor).item()
-        action_probability = policy[action_tensor]
+        current_action_policy = policy_network(current_state_tensor).squeeze(0)
+        current_state_value = value_network(current_state_tensor).item()
+        selected_action_probability = current_action_policy[selected_action_tensor]
         
-        q_value = reward_tensor + gamma * next_q_value
-        td_error = q_value - value
+        target_q_value = immediate_reward_tensor + discount_factor_gamma * next_q_value
+        temporal_difference_error = target_q_value - current_state_value
 
-        policy_loss = (-torch.log(action_probability) * td_error).mean()
-        value_loss = td_error.pow(2).mean()
+        policy_loss = (-torch.log(selected_action_probability) * temporal_difference_error).mean()
+        value_loss = temporal_difference_error.pow(2).mean()
 
-        optimizer.zero_grad()
+        adam_optimizer.zero_grad()
         (policy_loss + value_loss).backward()
-        optimizer.step()
+        adam_optimizer.step()
 
-        for param in value_net.parameters():
-            param.data.mul_(1 - alpha).add_(value * alpha)
+        for parameter in value_network.parameters():
+            parameter.data.mul_(1 - learning_rate_alpha).add_(current_state_value * learning_rate_alpha)

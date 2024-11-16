@@ -29,6 +29,7 @@ class Decision:
         self.kill_log = kill_log
         self.replay_buffer = replay_buffer
         self.alpha = alpha  
+        self.replay_buffer = ReplayBuffer(10000)
 
     def computer_decision(self):
         state = self.board_to_numeric(self.board.board).flatten()

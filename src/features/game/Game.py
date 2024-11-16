@@ -35,7 +35,6 @@ class Game:
         self.play_with_computer = play_with_computer
         self.computer_vs_computer = computer_vs_computer
         self.kill_log = []
-        self.replay_buffer = ReplayBuffer(10000)  # <-- Decision 클래스로 옮겨야 함
         self.game_over_display = GameOverDisplay(self.screen)
         pygame.display.set_caption("White turn")
         self.clock = pygame.time.Clock()
@@ -146,7 +145,7 @@ class Game:
     
 
     def computer_decision(self):
-        decision = Decision(self.board, self.current_turn, self.kill_log, self.replay_buffer)
+        decision = Decision(self.board, self.current_turn, self.kill_log)
         decision.computer_decision()
         self.switch_turn()
         self.turn_start_time = pygame.time.get_ticks()

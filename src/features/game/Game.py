@@ -131,9 +131,10 @@ class Game:
                             return
         else:
             piece = self.board.board[row, col]
-            if piece and piece.color == self.current_turn:
-                self.selected_piece = piece
-                self.selected_position = (row, col)
+            if piece:
+                if piece.color == self.current_turn:
+                    self.selected_piece = piece
+                    self.selected_position = (row, col)
     
     def handle_keydown(self, event):
         if event.key == pygame.K_ESCAPE:

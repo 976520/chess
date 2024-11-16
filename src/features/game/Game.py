@@ -111,8 +111,7 @@ class Game:
             else:
                 self.board.move_piece(start_pos, end_pos)
                 
-                move_sound = pygame.mixer.Sound("../../assets/sounds/Move.wav")
-                move_sound.play()
+                pygame.mixer.Sound("assets/sounds/Move.wav").play()
                 
                 self.selected_piece = None
                 self.selected_position = None

@@ -163,6 +163,21 @@ class Game:
     
 
     def computer_decision(self):
+        decision = Decision(self.board, self.current_turn, self.kill_log, self.replay_buffer)
+        decision.computer_decision()
+        self.switch_turn()
+        self.turn_start_time = pygame.time.get_ticks()
+        self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
+
+
+class Decision:
+    def __init__(self, board, current_turn, kill_log, replay_buffer):
+        self.board = board
+        self.current_turn = current_turn
+        self.kill_log = kill_log
+        self.replay_buffer = replay_buffer
+
+    def computer_decision(self):
         state = self.board_to_numeric(self.board.board).flatten()
         reward = 0
         actions = []
@@ -219,15 +234,13 @@ class Game:
             self.kill_log.append((self.board.board[start_row, start_col], self.board.board[move[0], move[1]]))
 
         self.board.computer_move_piece((start_row, start_col), move)
-        self.switch_turn()
-        self.turn_start_time = pygame.time.get_ticks()
 
-        if isinstance(self.board.board[move[0], move[1]], Pawn) and move[0] in {0, 7}:
-            self.board.board[move[0], move[1]].promote(self.board.board, move)
+        if isinstance(self.board.board[move[0], move[1]], Pawn):
+            if move[0] in {0, 7}:
+                self.board.board[move[0], move[1]].promote(self.board.board, move)
 
         self.board.computer_move_start = (start_row, start_col)
         self.board.computer_move_end = move
-        self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)
 
         torch.save(policy_net.state_dict(), 'policy_net.pth')
         torch.save(value_net.state_dict(), 'value_net.pth')
@@ -327,5 +340,3 @@ class Game:
         optimizer.step()
 
         value_net.load_state_dict(value_net.state_dict() * (1 - alpha) + value.item() * alpha)
-
-

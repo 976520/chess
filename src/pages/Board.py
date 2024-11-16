@@ -61,6 +61,10 @@ class Board:
                 if isinstance(target_piece, King):
                     self.display_game_over(self.get_turn())
                     return
+                
+                if target_piece is not None:
+                    pygame.mixer.Sound("assets/sounds/Kill.wav").play()
+                        
 
                 if isinstance(piece, King):
                     if abs(start_pos[1] - end_pos[1]) == 2:

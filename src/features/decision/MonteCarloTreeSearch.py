@@ -26,7 +26,7 @@ class MonteCarloTreeSearch:
             node = root
             search_path = [node]
             
-            while not node.is_leaf() and node.children:
+            while node is not None and not node.is_leaf() and node.children:
                 best_ucb = -float('inf')
                 best_child = None
                 
@@ -46,6 +46,9 @@ class MonteCarloTreeSearch:
                         
                 node = best_child
                 search_path.append(node)
+            
+            if node is None:
+                continue  
             
             if node.visits > 0:
                 policy, value = self.get_policy_value(node.state)

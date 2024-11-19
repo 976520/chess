@@ -33,76 +33,42 @@ class Decision:
 
     def make_computer_decision(self):
         current_state = self.convert_board_to_numeric(self.chess_board.board).flatten()
-        immediate_reward = 0
-        possible_actions = []
-        for row_index in range(8):
-            for column_index in range(8):
-                chess_piece = self.chess_board.board[row_index, column_index]
-                if chess_piece:
-                    if chess_piece.color == self.current_turn_color:
-                        potential_moves = chess_piece.get_possible_moves(self.chess_board.board, (row_index, column_index))
-                        for move in potential_moves:
-                            possible_actions.append(((row_index, column_index), move))
+        possible_actions = self.get_possible_actions()
 
         if not possible_actions:
             return
+
         policy_network = PolicyNetwork(len(possible_actions))
         value_network = ValueNetwork()
         adam_optimizer = optim.Adam(list(policy_network.parameters()) + list(value_network.parameters()), lr=0.0001)
         discount_factor_gamma = 0.99
-        number_of_simulations = 4
+        number_of_simulations = 800
 
-        monte_carlo_tree_search = MonteCarloTreeSearch(policy_network, value_network)
-        root_node = MonteCarloTreeSearchNode(current_state)
+        monte_carlo_tree_search = MonteCarloTreeSearch(policy_network, value_network, num_simulations=number_of_simulations)
+        action = monte_carlo_tree_search.search(current_state, possible_actions)
 
-        current_state_tensor = torch.tensor(current_state, dtype=torch.float32).unsqueeze(0)
-        with torch.no_grad():
-            action_priors = policy_network(current_state_tensor).squeeze(0).numpy()
-
-        root_node.expand(possible_actions, action_priors)
-
-        def execute_simulation(root_node, possible_actions):
-            for _ in range(number_of_simulations):
-                current_node = root_node
-                while not current_node.is_leaf():
-                    current_node = monte_carlo_tree_search.best_child(current_node)
-                if current_node.visits > 0:
-                    current_node.expand(possible_actions, )
-                self.immediate_reward = self.evaluate_chess_board()
-                while current_node:
-                    current_node.update(immediate_reward)
-                    current_node = current_node.parent
-
-        with concurrent.futures.ThreadPoolExecutor() as thread_executor:
-            future_simulations = []
-            for _ in range(number_of_simulations):
-                future_simulations.append(thread_executor.submit(execute_simulation, root_node, possible_actions))
-            concurrent.futures.wait(future_simulations)
-
-        optimal_action = monte_carlo_tree_search.best_action(root_node)
-        if not optimal_action:
+        if action is None:
             return
 
-        (start_row_index, start_column_index), move = optimal_action
+        (start_row_index, start_column_index), move = action
         if self.chess_board.board[move[0], move[1]]:
             self.captured_pieces_log.append((self.chess_board.board[start_row_index, start_column_index], self.chess_board.board[move[0], move[1]]))
 
         self.chess_board.computer_move_piece((start_row_index, start_column_index), move)
 
-        if isinstance(self.chess_board.board[move[0], move[1]], Pawn):
-            if move[0] in {0, 7}:
+        if move[0] in {0, 7}:
+            if isinstance(self.chess_board.board[move[0], move[1]], Pawn):
                 self.chess_board.board[move[0], move[1]].promote(self.chess_board.board, move)
 
-        self.chess_board.computer_move_start = (start_row_index, start_column_index)
-        self.chess_board.computer_move_end = move
-
+        # Save the networks and replay buffer
         torch.save(policy_network.state_dict(), 'policy_network.pth')
         torch.save(value_network.state_dict(), 'value_network.pth')
         with open('replay_memory_buffer.pkl', 'wb') as replay_buffer_file:
             pickle.dump(self.replay_memory_buffer, replay_buffer_file)
-        
+
         next_state = self.convert_board_to_numeric(self.chess_board.board).flatten()
-        self.update_policy_and_value_network(policy_network, value_network, adam_optimizer, current_state, optimal_action, immediate_reward, next_state, discount_factor_gamma, self.learning_rate_alpha)
+        immediate_reward = self.evaluate_chess_board()
+        self.update_policy_and_value_network(policy_network, value_network, adam_optimizer, current_state, action, immediate_reward, next_state, discount_factor_gamma, self.learning_rate_alpha)
 
     def evaluate_chess_board(self): 
         piece_value_mapping = {
@@ -195,3 +161,14 @@ class Decision:
 
         for parameter in value_network.parameters():
             parameter.data.mul_(1 - learning_rate_alpha).add_(current_state_value * learning_rate_alpha)
+
+    def get_possible_actions(self):
+        possible_actions = []
+        for row in range(8):
+            for col in range(8):
+                piece = self.chess_board.board[row, col]
+                if piece and piece.color == self.current_turn_color:
+                    moves = piece.get_possible_moves(self.chess_board.board, (row, col))
+                    for move in moves:
+                        possible_actions.append(((row, col), move))
+        return possible_actions

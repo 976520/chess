@@ -145,8 +145,9 @@ class Game:
     
 
     def computer_decision(self):
-        decision = Decision(self.board, self.current_turn, self.kill_log)
-        decision.computer_decision()
+        replay_memory_buffer = ReplayBuffer(10000)
+        decision = Decision(self.board, self.current_turn, self.kill_log, replay_memory_buffer)
+        decision.make_computer_decision()
         self.switch_turn()
         self.turn_start_time = pygame.time.get_ticks()
         self.board_display.display_board(self.board, self.selected_piece, self.selected_position, self.current_turn)

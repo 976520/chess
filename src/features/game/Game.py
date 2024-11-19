@@ -58,8 +58,8 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.is_game_over():  # Check if the game is over
-                        self.reset_game()  # Reset or go to menu
+                    if self.is_game_over():  
+                        self.reset_game()  
                     else:
                         self.handle_mousebuttondown()
                 elif event.type == pygame.KEYDOWN:
@@ -69,7 +69,6 @@ class Game:
             self.clock.tick(30)
             
     def reset_game(self):
-        # Logic to reset the game or go back to the menu
         menu = Menu()
         menu.run()
 

@@ -38,8 +38,13 @@ class GameOverDisplay:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                elif event.type == pygame.MOUSEBUTTONUP:
                     waiting_for_event = False
+                    from pages.Menu import Menu
+                    Menu().run()
+                    break
+                    
+                
 
     def king_exists(self, board, color):
         for row in board.board:

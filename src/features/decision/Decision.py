@@ -60,7 +60,6 @@ class Decision:
             if isinstance(self.chess_board.board[move[0], move[1]], Pawn):
                 self.chess_board.board[move[0], move[1]].promote(self.chess_board.board, move)
 
-        # Save the networks and replay buffer
         torch.save(policy_network.state_dict(), 'policy_network.pth')
         torch.save(value_network.state_dict(), 'value_network.pth')
         with open('replay_memory_buffer.pkl', 'wb') as replay_buffer_file:

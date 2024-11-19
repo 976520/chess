@@ -32,13 +32,14 @@ class GameOverDisplay:
         self.screen.blit(modal_surface, (300, 400))
         pygame.display.flip()
 
-        while True:
+        waiting_for_event = True
+        while waiting_for_event:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                elif event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
-                    return
+                elif event.type == pygame.MOUSEBUTTONDOWN or event.type == pygame.KEYDOWN:
+                    waiting_for_event = False
 
     def king_exists(self, board, color):
         for row in board.board:

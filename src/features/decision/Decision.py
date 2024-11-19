@@ -16,7 +16,6 @@ from widgets.pieces.Knight import Knight
 from widgets.pieces.Pawn import Pawn
 from widgets.pieces.Queen import Queen
 from features.decision.MonteCarloTreeSearch import MonteCarloTreeSearch
-from features.decision.MonteCarloTreeSearchNode import MonteCarloTreeSearchNode
 from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork

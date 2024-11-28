@@ -70,7 +70,8 @@ class MonteCarloTreeSearch:
         return best_child.action
     
     def best_action(self, node):
-        best_child = max(node.children, key=lambda child: child.visits)
+        best_child = node.children[0]
+        for child in node.children:
+            if child.visits > best_child.visits:
+                best_child = child
         return best_child.action
-    
-    

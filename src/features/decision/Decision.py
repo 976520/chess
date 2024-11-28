@@ -20,7 +20,6 @@ from features.decision.ReplayBuffer import ReplayBuffer
 from features.decision.PolicyNetwork import PolicyNetwork
 from features.decision.ValueNetwork import ValueNetwork
 
-
 class Decision:
     def __init__(self, chess_board, current_turn_color, captured_pieces_log, replay_memory_buffer, learning_rate_alpha=0.01):
         self.chess_board = chess_board
@@ -41,7 +40,7 @@ class Decision:
         value_network = ValueNetwork()
         adam_optimizer = optim.Adam(list(policy_network.parameters()) + list(value_network.parameters()), lr=0.0001)
         discount_factor_gamma = 0.99
-        number_of_simulations = 100000
+        number_of_simulations = 100
 
         monte_carlo_tree_search = MonteCarloTreeSearch(policy_network, value_network, num_simulations=number_of_simulations)
         action = monte_carlo_tree_search.search(current_state, possible_actions)

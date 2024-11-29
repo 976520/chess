@@ -40,7 +40,7 @@ class Decision:
         value_network = ValueNetwork()
         adam_optimizer = optim.Adam(list(policy_network.parameters()) + list(value_network.parameters()), lr=0.0001)
         discount_factor_gamma = 0.99
-        number_of_simulations = 100
+        number_of_simulations = 100000
 
         monte_carlo_tree_search = MonteCarloTreeSearch(policy_network, value_network, num_simulations=number_of_simulations)
         action = monte_carlo_tree_search.search(current_state, possible_actions)

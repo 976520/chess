@@ -26,7 +26,7 @@ class MonteCarloTreeSearchNode:
         piece = new_board[start_pos[0], start_pos[1]]
         new_board[end_pos[0], end_pos[1]] = piece
         new_board[start_pos[0], start_pos[1]] = None
-        return new_board
+        return new_board   
 
     def update(self, value):
         self.visits += 1
